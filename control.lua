@@ -33,6 +33,17 @@ local function player_gui(player)
         tooltip = storage.rank
     }
 end
+
+-- 手动重置nauvis
+commands.add_command("players_gui", nil, function(command)
+    local player = game.get_player(command.player_index)
+    if not player or player.admin then
+        for _, player in pairs(game.players) do player_gui(player) end
+    else
+        player.print(not_admin_text)
+    end
+end)
+
 -- 左上角游戏教程信息
 local function info_reset()
     storage.info = "\n" .. "[img=item/thruster]已经完成 " .. storage.run ..
@@ -137,23 +148,121 @@ script.on_event(defines.events.on_player_created, function(event)
     player_reset(player)
 end)
 
+-- autoplace_controls =
+-- {
+--   ["vulcanus_coal"] = {},
+--   ["sulfuric_acid_geyser"] = {},
+--   ["tungsten_ore"] = {},
+--   ["calcite"] = {},
+--   ["vulcanus_volcanism"] = {},
+-- },
+-- autoplace_controls =
+-- {
+--   ["gleba_stone"] = {},
+--   ["gleba_plants"] = {},
+--   ["gleba_enemy_base"] = {},
+--   ["gleba_water"] = {},
+--   ["gleba_cliff"] = {},
+-- },
+-- autoplace_controls =
+-- {
+--   ["scrap"] = {},
+--   ["fulgora_islands"] = {},
+--   ["fulgora_cliff"] = {},
+-- },
+-- autoplace_controls =
+-- {
+--   ["lithium_brine"] = {},
+--   ["fluorine_vent"] = {},
+--   ["aquilo_crude_oil"] = {}
+-- },
+
+local function random_richness()
+    if not storage.richness then storage.richness = 1 end -- immigration
+    return (math.exp(math.random() * 1) - 0.99) * storage.richness
+end
+
 -- 创建随机表面
 script.on_event(defines.events.on_surface_created, function(event)
-    local function surface_reset(surface)
-        local mgs = surface.map_gen_settings
-        mgs.seed = math.random(1, 4294967295)
-        mgs.width = storage.radius * 2 + 32
-        mgs.height = storage.radius * 2 + 32
-        surface.map_gen_settings = mgs;
-    end
+
     local surface = game.get_surface(event.surface_index)
-    if surface then surface_reset(surface) end
+    if not surface then return end
+
+    local mgs = surface.map_gen_settings
+    mgs.seed = math.random(1, 4294967295)
+
+    local r = storage.radius *
+                  (0.5 + math.random() + 2 * math.random() * math.random())
+    r = math.max(384, r)
+    r = math.min(2048, r)
+
+    if not storage.radius_of then storage.radius_of = {} end -- immigration
+    storage.radius_of[surface.name] = r
+
+    mgs.width = r * 2 + 32
+    mgs.height = r * 2 + 32
+
+    -- 重置mgs
+
+    -- nauvis
+    -- 'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore',
+
+    if surface == game.surfaces.vulcanus then
+        local richness = random_richness()
+        for _, res in pairs({
+            'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'
+        }) do mgs.autoplace_controls[res].richness = richness end
+
+        local volcanism = 'vulcanus_volcanism'
+        mgs.autoplace_controls[volcanism].richness = random_richness()
+    end
+
+    if surface == game.surfaces.fulgora then
+        for _, res in pairs({'scrap'}) do
+            local richness = random_richness()
+            mgs.autoplace_controls[res].richness = richness
+        end
+
+        local fulgora_islands = 'fulgora_islands'
+        mgs.autoplace_controls[fulgora_islands].richness = random_richness()
+    end
+
+    if surface == game.surfaces.gleba then
+        local res = 'gleba_stone'
+        local richness = random_richness()
+        mgs.autoplace_controls[res].richness = richness
+
+        local enemy = 'gleba_enemy_base'
+        mgs.autoplace_controls[enemy].richness = math.random() * 6
+        mgs.autoplace_controls[enemy].size = math.random() * 6
+        mgs.autoplace_controls[enemy].frequency = math.random() * 6
+
+        local water = 'gleba_water'
+        local richness = math.exp(math.random() * 4) * 0.125 - 0.99
+        mgs.autoplace_controls[water].richness = richness
+
+        local plants = 'gleba_plants'
+        local richness = math.exp(math.random() * 4) * 0.125 - 0.99
+        mgs.autoplace_controls[plants].richness = richness
+    end
+
+    if surface == game.surfaces.aquilo then
+        local richness = random_richness()
+        for _, res in pairs({
+            'lithium_brine', 'fluorine_vent', 'aquilo_crude_oil'
+        }) do mgs.autoplace_controls[res].richness = richness end
+    end
+
+    surface.map_gen_settings = mgs
+
 end)
 
 -- 删除表面
 script.on_event(defines.events.on_surface_deleted, function(event)
     local surface = game.get_surface(event.surface_index)
-    if surface then game.print({"", "永别了，" , "space-location-name.".. surface.name}) end
+    if surface then
+        game.print({"", "永别了，", "space-location-name." .. surface.name})
+    end
 end)
 
 local market_x = -1
@@ -161,9 +270,13 @@ local market_y = -8
 
 -- 重置母星市场 -- 目前什么事都没有做
 local function nauvis_reset()
+    -- /c game.surfaces.nauvis.regenerate_entity('uranium-ore', {{4, 2}})
     local nauvis = game.surfaces.nauvis
+    nauvis.regenerate_entity('uranium-ore', {{4, 2}})
+    nauvis.regenerate_entity(nil, {{-3, 0}, {-3, 1}})
+
     -- 市场
-    local market = nauvis.find_entity({name = 'market', quality = normal},
+    local market = nauvis.find_entity({name = 'market', quality = legendary},
                                       {x = market_x, y = market_y})
     if not market then
         game.print('奇怪，找不到母星市场')
@@ -270,6 +383,8 @@ local function run_reset()
         game.delete_surface(game.planets.aquilo.surface)
     end
 
+    nauvis_reset()
+
     -- 重置玩家势力
     local enemy = game.forces.enemy
     enemy.reset_evolution()
@@ -277,7 +392,8 @@ local function run_reset()
     local force = game.forces.player
     force.reset()
     force.friendly_fire = false
-    force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+    force.set_spawn_position({storage.respawn_x, storage.respawn_y},
+                             game.surfaces.nauvis)
 
     -- 重置科技
     tech_reset()
@@ -342,6 +458,14 @@ local function nauvis_init()
     storage.reward_flag = 0
     storage.trade_done = 0
     storage.trande_init = 0
+
+    storage.richness = 1
+    storage.radius_of = {}
+    storage.radius = math.ceil(math.max(nauvis.map_gen_settings.width / 2,
+                                        nauvis.map_gen_settings.height / 2)) -
+                         32
+    storage.radius = math.min(1024, storage.radius)
+    storage.radius = math.max(128, storage.radius)
 
     -- [item=cargo-landing-pad]
     local pad = nauvis.create_entity {
@@ -428,14 +552,6 @@ script.on_init(function()
     storage.mining_current = 0
     storage.mining_needed = 10
 
-
-
-    storage.radius = math.ceil(math.max(nauvis.map_gen_settings.width / 2,
-                                        nauvis.map_gen_settings.height / 2)) -
-                         64
-    storage.radius = math.min(2048, storage.radius)
-    storage.radius = math.max(256, storage.radius)
-
     run_reset()
 end)
 
@@ -466,7 +582,12 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     local chunk_position = event.position
     local left_top = event.area.left_top
 
-    local r = storage.radius
+    if not storage.radius_of then storage.radius_of = {} end -- immigration
+    local r = storage.radius_of[surface.name]
+    if not r then -- immigration
+        r = storage.radius
+    end
+
     local chunk_size = 32
 
     tiles = {}
