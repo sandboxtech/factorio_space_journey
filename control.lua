@@ -103,10 +103,11 @@ local function galaxy_reset()
     -- 刷新星系参数
     storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) *
         math.random(1, 4) * 0.1
+    game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
     storage.max_platform_count = math.random(1, 6)
     storage.max_platform_size = math.random(2, 5) * math.random(2, 5) * 32
 
-    storage.galaxy = { "", { "wn.galaxy-trait-title" }, { "wn.galaxy-trait-solar", storage.solar_power_multiplier }, { "wn.galaxy-trait-platform-amount", storage.max_platform_count }, { "wn.galaxy-trait-platform-size", storage.max_platform_size } }
+    storage.galaxy = { "", { "wn.galaxy-trait-title" }, { "wn.galaxy-trait-solar", storage.solar_power_multiplier }, { "wn.galaxy-traitform-amount", storage.max_platform_count }, { "wn.galaxy-trait-platform-size", storage.max_platform_size } }
 
     local force = game.forces.player
 
@@ -190,7 +191,7 @@ end
 script.on_event(defines.events.on_surface_created, function(event)
     local surface = game.get_surface(event.surface_index)
     if not surface then return end
-
+    surface.solar_power_multiplier = storage.solar_power_multiplier
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
 
@@ -770,7 +771,7 @@ script.on_nth_tick(60 * 60, function()
                     count = storage.provider_count,
                     quality = storage.provider_quality
                 }
-                game.print({ "wn.trade-success", storage.requester_text, storage.provider_text })
+                game.print({ "wn.", storage.requester_text, storage.provider_text })
                 if storage.trade_done == storage.trade_init then
                     game.print({ "wn.galaxy-trade-all-done" })
                 end
