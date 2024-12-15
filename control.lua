@@ -1,3 +1,5 @@
+storage.version = 20241215
+
 -- local handler = require("event_handler")
 -- local functions = require("functions")
 -- 常数
@@ -50,10 +52,10 @@ local function info_reset()
                        " 次跃迁\n\n" ..
                        "[img=technology/mining-productivity-3]研究采矿产能 " ..
                        storage.mining_needed ..
-                       " 级，跃迁至下一个星系！\n\n\n" ..
-                       "[img=item/space-platform-starter-pack]太空平台最大数量 " ..
-                       storage.max_platform_count .. "\n\n" ..
-                       "[img=space-location/solar-system-edge]外星系随机词条开发中...\n\n" ..
+                       " 级，跃迁至下一个星系！\n\n" ..
+                       "[img=space-location/solar-system-edge]每个星系有不同的特色\n\n" ..
+                       "[img=space-location/solar-system-edge]在富饶的星系获取资源\n\n" ..
+                       "[img=space-location/solar-system-edge]通过跃迁离开贫瘠星系\n\n\n" ..
                        "[img=space-location/nauvis]跃迁时，母星和玩家背包会保留\n\n" ..
                        "[img=item/lab]跃迁时，科技会重置\n\n" ..
                        "[img=item/space-platform-foundation]跃迁时，太空平台无法带走\n\n" ..
@@ -92,21 +94,65 @@ local function galaxy_reset()
                                 storage.provider_count
 
     storage.reward_flag = 0
-    storage.reward_count = 1000
+    storage.reward_count = 10
     storage.reward_type = 'coin'
     storage.reward_quality = epic
     storage.reward_text = '[item=' .. storage.reward_type .. ',quality=' ..
                               storage.reward_quality .. '] x ' ..
                               storage.reward_count
 
+    -- 刷新星系参数
+    storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) *
+                                         math.random(1, 4) * 0.1
+    storage.max_platform_count = math.random(1, 6)
+    storage.max_platform_size = math.random(2, 5) * math.random(2, 5) * 32
+
+    storage.galaxy = ""
+    storage.galaxy = storage.galaxy .. "\n星系特性："
     storage.galaxy =
-        "\n通过母星中心的[img=item/requester-chest][img=item/passive-provider-chest]\n" ..
-            "每分钟自动进行此星系专属的特殊交易\n\n" ..
-            "星系收购 " .. storage.requester_text .. "\n" .. "星系生产 " ..
-            storage.provider_text .. "\n" ..
-            "\n研究[img=technology/research-productivity]之后\n在[img=item/storage-chest]领取星系奖励\n" ..
-            "\n星系奖励 " .. storage.reward_text .. "\n" ..
-            "\n\n输入指令 /trade 查看更多信息 \n\n"
+        storage.galaxy .. "\n[img=item/solar-panel] 太阳强度 " ..
+            storage.solar_power_multiplier
+    storage.galaxy = storage.galaxy ..
+                         "\n[img=item/space-platform-starter-pack] 太空平台 最大数量 " ..
+                         storage.max_platform_count
+    storage.galaxy = storage.galaxy ..
+                         "\n[img=item/space-platform-starter-pack] 太空平台 最大边长 " ..
+                         storage.max_platform_size
+
+    local force = game.forces.player
+
+    local productivity_techs = {
+        'rocket-fuel-productivity', 'low-density-structure-productivity',
+        'processing-unit-productivity', 'rocket-part-productivity'
+    }
+
+    local productivity_techs_2 = {
+        'steel-plate-productivity', 'plastic-bar-productivity',
+        'asteroid-productivity', 'scrap-recycling-productivity'
+    }
+
+    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
+        for _, tech in pairs(techs) do
+            if math.random(10) == 1 then
+                force.technologies[tech].researched = true
+                force.technologies[tech].level = 100
+                storage.galaxy =
+                    storage.galaxy .. "\n[img=technology/" .. tech ..
+                        "] 初始科技 100 级"
+                break
+            end
+        end
+    end
+
+    storage.galaxy = storage.galaxy ..
+                         "\n\n\n通过母星中心的[img=item/requester-chest][img=item/passive-provider-chest]\n" ..
+                         "每分钟自动进行此星系专属的特殊交易\n\n" ..
+                         "星系收购 " .. storage.requester_text .. "\n" ..
+                         "星系生产 " .. storage.provider_text .. "\n" ..
+                         "\n研究[img=technology/research-productivity]研究产能之后\n在[img=item/storage-chest]领取星系奖励\n" ..
+                         "\n星系奖励 " .. storage.reward_text .. "\n" ..
+                         "\n\n输入指令 /trade 查看更多信息 \n\n"
+
 end
 
 -- 查看交易信息
@@ -134,6 +180,11 @@ local function rank_reset()
 end
 
 -- 重置玩家
+local function player_recall(player)
+    player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+end
+
+-- 重置玩家
 local function player_reset(player)
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
@@ -147,35 +198,6 @@ script.on_event(defines.events.on_player_created, function(event)
     if player.name == 'hncsltok' then player.admin = true end
     player_reset(player)
 end)
-
--- autoplace_controls =
--- {
---   ["vulcanus_coal"] = {},
---   ["sulfuric_acid_geyser"] = {},
---   ["tungsten_ore"] = {},
---   ["calcite"] = {},
---   ["vulcanus_volcanism"] = {},
--- },
--- autoplace_controls =
--- {
---   ["gleba_stone"] = {},
---   ["gleba_plants"] = {},
---   ["gleba_enemy_base"] = {},
---   ["gleba_water"] = {},
---   ["gleba_cliff"] = {},
--- },
--- autoplace_controls =
--- {
---   ["scrap"] = {},
---   ["fulgora_islands"] = {},
---   ["fulgora_cliff"] = {},
--- },
--- autoplace_controls =
--- {
---   ["lithium_brine"] = {},
---   ["fluorine_vent"] = {},
---   ["aquilo_crude_oil"] = {}
--- },
 
 local function random_richness()
     if not storage.richness then storage.richness = 1 end -- immigration
@@ -193,15 +215,22 @@ script.on_event(defines.events.on_surface_created, function(event)
 
     local r = storage.radius *
                   (0.5 + math.random() + 2 * math.random() * math.random())
-    r = math.max(384, r)
-    r = math.min(2048, r)
+    r = math.max(256, r)
+    r = math.min(1024, r)
 
     if not storage.radius_of then storage.radius_of = {} end -- immigration
     storage.radius_of[surface.name] = r
 
-    mgs.width = r * 2 + 32
-    mgs.height = r * 2 + 32
-
+    local platform = surface.platform
+    if platform then
+        local size = storage.max_platform_size
+        size = math.max(size, 64)
+        mgs.width = size
+        mgs.height = size
+    else
+        mgs.width = r * 2
+        mgs.height = r * 2
+    end
     -- 重置mgs
 
     -- nauvis
@@ -209,6 +238,11 @@ script.on_event(defines.events.on_surface_created, function(event)
 
     if surface == game.surfaces.vulcanus then
         local richness = random_richness()
+        game.print({
+            "", {"space-location-name." .. surface.name}, " 资源丰度，",
+            richness
+        })
+
         for _, res in pairs({
             'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'
         }) do mgs.autoplace_controls[res].richness = richness end
@@ -261,7 +295,9 @@ end)
 script.on_event(defines.events.on_surface_deleted, function(event)
     local surface = game.get_surface(event.surface_index)
     if surface then
-        game.print({"", "永别了，", "space-location-name." .. surface.name})
+        game.print({
+            "", "永别了，", {"space-location-name." .. surface.name}
+        })
     end
 end)
 
@@ -270,7 +306,6 @@ local market_y = -8
 
 -- 重置母星市场 -- 目前什么事都没有做
 local function nauvis_reset()
-    -- /c game.surfaces.nauvis.regenerate_entity('uranium-ore', {{4, 2}})
     local nauvis = game.surfaces.nauvis
     nauvis.regenerate_entity('uranium-ore', {{4, 2}})
     nauvis.regenerate_entity(nil, {{-3, 0}, {-3, 1}})
@@ -282,7 +317,7 @@ local function nauvis_reset()
         game.print('奇怪，找不到母星市场')
         return
     else
-        game.print('母星市场已刷新')
+        -- game.print('母星市场已刷新')
     end
 end
 
@@ -344,30 +379,28 @@ local function tech_reset()
     end
 end
 
+-- todo:
+-- 随机星系，星系特殊介绍文本
+-- 开局科技
+-- 星球特色参数、飞船大小、飞船数量
+
 -- 跃迁
 local function run_reset()
-    storage.mining_current = 0
     storage.run = storage.run + 1
-    storage.mining_needed = 10 + math.floor(math.pow(storage.run, 0.25))
 
-    -- 移除离线玩家
-    local players_to_remove = {}
-    for _, player in pairs(game.players) do
-        if not player.connected then
-            table.insert(players_to_remove, player)
-        end
-    end
-    game.remove_offline_players(players_to_remove)
+    -- -- 移除离线玩家
+    -- local players_to_remove = {}
+    -- for _, player in pairs(game.players) do
+    --     if not player.connected then
+    --         table.insert(players_to_remove, player)
+    --     end
+    -- end
+    -- game.remove_offline_players(players_to_remove)
 
     storage.respawn_x = 0
     storage.respawn_y = -5
-
-    -- 更新UI信息
-    info_reset()
-    galaxy_reset()
-    rank_reset()
-    -- 重置玩家
-    for _, player in pairs(game.players) do player_reset(player) end
+    -- 召回玩家到母星
+    for _, player in pairs(game.players) do player_recall(player) end
 
     -- 删除表面
     if (game.planets.vulcanus.surface) then
@@ -409,6 +442,18 @@ local function run_reset()
             "小时" .. math.floor((game.tick % min_to_tick) / min_to_tick) ..
             "分钟")
     game.reset_time_played()
+
+    -- 更新主线任务
+    storage.mining_current = 0
+    storage.mining_needed = 10 + math.floor(math.pow(storage.run, 0.25))
+
+    -- 更新UI信息
+    galaxy_reset()
+    info_reset()
+    rank_reset()
+
+    -- 重置玩家
+    for _, player in pairs(game.players) do player_reset(player) end
 
 end
 
@@ -464,7 +509,7 @@ local function nauvis_init()
     storage.radius = math.ceil(math.max(nauvis.map_gen_settings.width / 2,
                                         nauvis.map_gen_settings.height / 2)) -
                          32
-    storage.radius = math.min(1024, storage.radius)
+    storage.radius = math.min(512, storage.radius)
     storage.radius = math.max(128, storage.radius)
 
     -- [item=cargo-landing-pad]
@@ -547,7 +592,6 @@ script.on_init(function()
     local nauvis = game.surfaces.nauvis
     nauvis_init()
 
-    storage.max_platform_count = 3
     storage.run = -1
     storage.mining_current = 0
     storage.mining_needed = 10
@@ -760,9 +804,9 @@ script.on_nth_tick(60 * 60, function()
     end
 end)
 
-script.on_nth_tick(60 * 60 * 10, function()
+script.on_nth_tick(60 * 60 * 20, function()
 
-    -- 奖金发放 10分钟一次
+    -- 奖金发放 20分钟一次
     local salary = storage.run;
     if salary <= 0 then return end
     for _, player in pairs(game.connected_players) do -- Table iteration.
