@@ -1,5 +1,3 @@
-storage.version = 20241215
-
 -- local handler = require("event_handler")
 -- local functions = require("functions")
 -- 常数
@@ -596,6 +594,9 @@ script.on_init(function()
     storage.mining_current = 0
     storage.mining_needed = 10
 
+    storage.last_warp_tick = 0
+    storage.last_warp_count = 0
+
     run_reset()
 end)
 
@@ -718,11 +719,29 @@ end)
 commands.add_command("warp", nil, function(command)
     local player = game.get_player(command.player_index)
     local player_name = not player and 'server' or player.name
-    if can_reset() then
-        game.print(player_name .. ' 启动跃迁程序！')
-        run_reset()
-    else
+
+    if player and player.online_time < 60 * 60 * 60 * 6 then
+        player.print('在线 6 小时，获取跃迁权限')
+    end
+
+    local count = 3
+    if not can_reset() then
         if player then player.print('未满足跃迁条件') end
+    else
+        storage.last_warp = game.tick
+        if game.tick - storage.last_warp > 60 * 10 then
+            storage.last_warp_count = 0
+            game.print(player_name ..
+                           '尝试启动跃迁！ 再次输入 /warp 推进跃迁程序！')
+        elseif storage.last_warp_count < count then
+            storage.last_warp_count = storage.last_warp_count + 1
+            game.print(player_name .. ' 推进跃迁程序！进度 ' ..
+                           storage.last_warp_count .. ' / 3')
+        else
+            game.print(player_name ..
+                           '启动跃迁！ 再次输入 /warp 推进跃迁程序！')
+            run_reset()
+        end
     end
 end)
 
