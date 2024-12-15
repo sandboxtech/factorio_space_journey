@@ -631,7 +631,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         local force = platform.force
         if #force.platforms > storage.max_platform_count then
             platform.destroy(1)
-            game.print({ "wn.too-many-platforms", platform.name, })
+            game.print({ "wn.too-many-platforms", storage.max_platform_count, })
         end
     end
 end)
