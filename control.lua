@@ -107,7 +107,7 @@ local function galaxy_reset()
     storage.max_platform_count = math.random(1, 6)
     storage.max_platform_size = math.random(2, 5) * math.random(2, 5) * 32
 
-    storage.galaxy = { "", { "wn.galaxy-trait-title" }, { "wn.galaxy-trait-solar", storage.solar_power_multiplier }, { "wn.galaxy-traitform-amount", storage.max_platform_count }, { "wn.galaxy-trait-platform-size", storage.max_platform_size } }
+    storage.galaxy = { "", { "wn.galaxy-trait-title" }, { "wn.galaxy-trait-solar", storage.solar_power_multiplier }, { "wn.galaxy-trait-platform-amount", storage.max_platform_count }, { "wn.galaxy-trait-platform-size", storage.max_platform_size } }
 
     local force = game.forces.player
 
