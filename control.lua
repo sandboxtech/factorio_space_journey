@@ -593,6 +593,9 @@ script.on_init(function()
     local nauvis = game.surfaces.nauvis
     nauvis_init()
 
+    storage.speed_penalty_enabled = false
+    storage.speed_penalty_day = 5
+
     storage.run = -1
     storage.mining_current = 0
     storage.mining_needed = 10
@@ -829,13 +832,13 @@ end)
 
 script.on_nth_tick(60 * 60 * 180, function()
     -- 修改游戏运行速度
+    if not storage.speed_penalty_enabled then return end
 
     local time_played = game.tick - storage.run_start_tick
-    local force = game.forces.player
 
-    local game_speed = 60 * 60 * 60 * 24 * 3 / (1 + time_played)
+    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
     game_speed = math.min(game_speed, 1)
-    game_speed = math.max(game_speed, 0.1)
+    game_speed = math.max(game_speed, 0.125)
 
     if game.speed < 1 then
         game.speed = game_speed
