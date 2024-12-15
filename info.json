@@ -1,11 +1,16 @@
 {
-  "name": "starrail",
+  "name": "wandering-nauvis",
   "version": "2.0.23",
-  "title": "星穹铁道",
+  "title": "流浪地球",
   "author": "虚无群友",
   "contact": "Q群293280221",
   "homepage": "https://www.factorio.com",
-  "dependencies": ["base >= 2.0.0", "elevated-rails >= 2.0.0", "quality >= 2.0.0", "space-age >= 2.0.0"],
+  "dependencies": [
+    "base >= 2.0.0",
+    "elevated-rails >= 2.0.0",
+    "quality >= 2.0.0",
+    "space-age >= 2.0.0"
+  ],
   "quality_required": true,
   "space_travel_required": true,
   "spoiling_required": true,
