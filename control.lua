@@ -335,7 +335,7 @@ local function tech_reset()
 
     -- 科技修改
     local researched_techs = {
-        'biter-egg-handling', 'basic-oil-processing', 'uranium-processing'
+        'biter-egg-handling', 'oil-processing', 'uranium-processing'
     }
 
     local enabled_techs = {
