@@ -722,8 +722,12 @@ end)
 
 -- 手动跃迁
 commands.add_command("warp", nil, function(command)
-    local player = game.get_player(command.player_index)
-    local player_name = not player and 'server' or player.name
+    if command.player_index then
+        local player = game.get_player(command.player_index)
+        local player_name = player.name
+    else
+        local player_name = "<server>"
+    end
 
     if player and player.online_time < 60 * 60 * 60 * 6 then
         player.print({"wn.warp-permission-denied"})
@@ -836,7 +840,8 @@ script.on_nth_tick(60 * 60 * 180, function()
 
     local time_played = game.tick - storage.run_start_tick
 
-    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
+    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day /
+                           (1 + time_played)
     game_speed = math.min(game_speed, 1)
     game_speed = math.max(game_speed, 0.125)
 
