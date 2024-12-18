@@ -722,11 +722,11 @@ end)
 
 -- 手动跃迁
 commands.add_command("warp", nil, function(command)
+    local player_name = "<server>"
+    local player = nil
     if command.player_index then
-        local player = game.get_player(command.player_index)
-        local player_name = player.name
-    else
-        local player_name = "<server>"
+        player = game.get_player(command.player_index)
+        player_name = player.name
     end
 
     if player and player.online_time < 60 * 60 * 60 * 6 then
