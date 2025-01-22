@@ -167,9 +167,9 @@ end)
 -- 左上角玩家信息
 local function rank_reset()
     local player_list = ""
-    for _, player in pairs(game.players) do
-        player_list = player_list .. player.name .. "\n"
-    end
+    -- for _, player in pairs(game.players) do
+    --     player_list = player_list .. player.name .. "\n"
+    -- end
     storage.rank = {"wn.storage-players", player_list}
 end
 
