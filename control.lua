@@ -231,10 +231,11 @@ script.on_event(defines.events.on_surface_created, function(event)
 
     if surface == game.surfaces.vulcanus then
         local richness = random_richness()
-        game.print({
-            "", {"space-location-name." .. surface.name},
-            {"wn.patch-richness", richness}
-        })
+        -- todo: remove this print test ?
+        -- game.print({
+        --     "", {"space-location-name." .. surface.name},
+        --     {"wn.patch-richness", richness}
+        -- })
 
         for _, res in pairs({
             'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'
@@ -510,7 +511,7 @@ local function nauvis_init()
     storage.radius = math.ceil(math.max(nauvis.map_gen_settings.width / 2,
                                         nauvis.map_gen_settings.height / 2)) -
                          32
-    storage.radius = math.min(512, storage.radius)
+    storage.radius = math.min(256, storage.radius)
     storage.radius = math.max(128, storage.radius)
 
     -- [item=cargo-landing-pad]
@@ -604,6 +605,10 @@ script.on_init(function()
     storage.last_warp_count = 0
 
     run_reset()
+
+    -- first run bonus
+    local force = game.forces.player
+    force.technologies['space-platform'].research_recursive()
 end)
 
 script.on_event(defines.events.on_gui_click,
