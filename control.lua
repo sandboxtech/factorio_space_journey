@@ -873,10 +873,13 @@ script.on_nth_tick(60 * 60 * 180, function()
     end
 end)
 
-script.on_event(defines.events.on_built_entity, function(event)
+function on_built_entity(event)
     local entity = event.entity
     if not entity then return end
     if not entity.valid then return end
     if entity.surface.index ~= 1 then return end -- nauvis
-    if entity.type == 'cargo-bay' then entity.die() end
-end)
+    if entity.type == 'cargo-bay' then entity.die() return end
+end
+
+script.on_event(defines.events.on_built_entity, on_built_entity)
+script.on_event(defines.events.on_robot_built_entity, on_built_entity)
