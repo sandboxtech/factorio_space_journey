@@ -973,3 +973,34 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         redraw_player_gui()
     end
 end)
+
+-- print tile data
+function tile_checker(event)
+    local surface_index = event.surface_index
+    local surface = game.surfaces[surface_index]
+    -- local position = event.tiles[1].position
+    -- local tile = surface.get_tile(position).name or "NULL"
+    -- local hidden_tile = surface.get_hidden_tile(position) or "NULL"
+    -- local double_hidden_tile = surface.get_double_hidden_tile(position) or "NULL"
+    -- game.print("Tile Data at [gps=" .. position.x .. "," .. position.y .. ","..surface.name.."]")
+    -- game.print("Tile: " .. tile)
+    -- game.print("Hidden Tile: " .. hidden_tile)
+    -- game.print("Double Hidden Tile: " .. double_hidden_tile)
+    local hidden_tile
+    local double_hidden_tile
+    local position
+    for _, tile_data in ipairs(event.tiles) do 
+        position = tile_data.position
+        hidden_tile = surface.get_hidden_tile(position)
+        double_hidden_tile = surface.get_double_hidden_tile(position)
+        if hidden_tile ~= nil then
+            surface.set_tiles({{name = hidden_tile, position = position}})
+        end
+        if double_hidden_tile ~= nil then
+            surface.set_hidden_tile(position, double_hidden_tile)
+        end
+    end
+    game.print("tile place event cancelled.")
+end
+
+script.on_event(defines.events.on_player_built_tile, tile_checker)
