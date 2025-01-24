@@ -25,20 +25,23 @@ local function player_gui(player)
         type = "sprite-button",
         -- sprite = "space-location/solar-system-edge",
         sprite = "virtual-signal/signal-info",
+        -- sprite = "item/raw-fish",
         name = "info",
         tooltip = storage.info
     }
+    local statistics = player.gui.top.add {
+        type = "sprite-button",
+        sprite = "virtual-signal/signal-heart",
+        -- sprite = "entity/market",
+        name = "statistics",
+        tooltip = storage.statistics_text
+    }
+
     local galaxy = player.gui.top.add {
         type = "sprite-button",
         sprite = "space-location/solar-system-edge",
         name = "galaxy",
-        tooltip = storage.galaxy
-    }
-    local rank = player.gui.top.add {
-        type = "sprite-button",
-        sprite = "entity/character",
-        name = "rank",
-        tooltip = storage.rank
+        tooltip = storage.galaxy_text
     }
 end
 
@@ -58,49 +61,26 @@ end)
 
 -- 左上角游戏教程信息
 local function info_reset()
-    -- storage.info = "\n" .. "[img=item/thruster]已经完成 " .. storage.run ..
-    --     " 次跃迁\n\n" ..
-    --     "[img=technology/mining-productivity-3]研究采矿产能 " ..
-    --     storage.mining_needed ..
-    --     " 级，跃迁至下一个星系！\n\n" ..
-    --     "[img=space-location/solar-system-edge]每个星系有不同的特色\n\n" ..
-    --     "[img=space-location/solar-system-edge]在富饶的星系获取资源\n\n" ..
-    --     "[img=space-location/solar-system-edge]通过跃迁离开贫瘠星系\n\n\n" ..
-    --     "[img=space-location/nauvis]跃迁时，母星和玩家背包会保留\n\n" ..
-    --     "[img=item/lab]跃迁时，科技会重置\n\n" ..
-    --     "[img=item/space-platform-foundation]跃迁时，太空平台无法带走\n\n" ..
-    --     "[img=item/production-science-pack]跃迁前，记得掠夺外星，在母星屯满各种货物\n\n" ..
-    --     "[img=item/requester-chest][img=item/passive-provider-chest]跃迁后，星系市场会刷新[img=quality/epic][img=quality/legendary]货物订单\n\n" ..
-    --     "[img=item/storage-chest]跃迁后，星系市场会刷新奖励，需要[img=technology/research-productivity]\n\n" ..
-    --     "[img=item/coin]跃迁次数越多，定期发放金币越多\n\n" ..
-    --     "[img=entity/big-wriggler-pentapod]BUG反馈 Q群 293280221\n\n"
     storage.info = { "wn.storage-info", storage.mining_needed }
 end
 
-local function reset_statistics()
-    storage.galaxy = {
+local function statistics_text_update()
+    storage.statistics_text = {
         "",
         { "wn.statistics-title" },
+        "\n",
         { "wn.statistics-run",                  storage.run },
+        "\n",
         { "wn.statistics-run-vulcanus",         storage.run_vulcanus },
         { "wn.statistics-run-fulgora",          storage.run_fulgora },
         { "wn.statistics-run-gleba",            storage.run_gleba },
         { "wn.statistics-run-aquilo",           storage.run_aquilo },
         { "wn.statistics-run-edge",             storage.run_edge },
         { "wn.statistics-run-shattered-planet", storage.run_shattered_planet },
-        { "wn.statistics-run-promethium-tech",  storage.run_promethium_tech },
-
-        { "wn.galaxy-trait-title" },
-        { "wn.galaxy-trait-solar",              storage.solar_power_multiplier },
-        { "wn.galaxy-trait-platform-amount",    storage.max_platform_count },
-        { "wn.galaxy-trait-platform-size",      storage.max_platform_size }
-    }
-
-    storage.galaxy = {
-        "", storage.galaxy, {
-        "wn.galaxy-trade", storage.requester_text, storage.provider_text,
-        storage.reward_text
-    }
+        "\n",
+        { "wn.statistics-run-epic-quality",          storage.run_research_productivity },
+        { "wn.statistics-run-legendary-quality",     storage.run_research_productivity },
+        { "wn.statistics-run-research-productivity", storage.run_research_productivity },
     }
 end
 
@@ -111,13 +91,16 @@ local function galaxy_reset()
     storage.run_gleba_flag = false
     storage.run_aquilo_flag = false
     storage.run_edge_flag = false
-    storage.run_promethium_tech_flag = false
     storage.run_shattered_planet_flag = false
+
+    storage.run_research_productivity_flag = false
+    storage.run_epic_quality_flag = false
+    storage.run_legendary_quality_flag = false
 
     -- 已经交易次数
     storage.trade_done = 0
     -- 最大交易次数
-    storage.trade_init = 1000
+    storage.trade_max = 100
     -- 交易内容，随机科技包
     local random_packs = {
         'automation-science-pack', 'logistic-science-pack',
@@ -128,26 +111,26 @@ local function galaxy_reset()
     }
     local random_pack = random_packs[math.random(#random_packs)]
 
-    -- 需求1000个稀有科技包
+    -- 需求1000个传说科技包
     storage.requester_count = 1000
     storage.requester_type = random_pack
-    storage.requester_quality = rare
+    storage.requester_quality = legendary
     storage.requester_text =
         '[item=' .. storage.requester_type .. ',quality=' ..
         storage.requester_quality .. '] x ' .. storage.requester_count
 
-    -- 提供1个史诗科技包
+    -- 提供1个硬币
     storage.provider_count = 1
-    storage.provider_type = random_pack
-    storage.provider_quality = epic
+    storage.provider_type = 'solar-panel-equipment'
+    storage.provider_quality = normal
     storage.provider_text = '[item=' .. storage.provider_type .. ',quality=' ..
         storage.provider_quality .. '] x ' ..
         storage.provider_count
 
     storage.reward_flag = false
-    storage.reward_count = 10
-    storage.reward_type = 'coin'
-    storage.reward_quality = epic
+    storage.reward_count = 1
+    storage.reward_type = 'modular-armor'
+    storage.reward_quality = normal
     storage.reward_text = '[item=' .. storage.reward_type .. ',quality=' ..
         storage.reward_quality .. '] x ' ..
         storage.reward_count
@@ -176,23 +159,21 @@ local function galaxy_reset()
             if math.random(10) == 1 then
                 force.technologies[tech].researched = true
                 force.technologies[tech].level = 100
-                storage.galaxy = {
-                    "", storage.galaxy, { "wn.galaxy-trait-technology", tech }
+                storage.galaxy_text = {
+                    "", storage.galaxy_text, { "wn.galaxy-trait-technology", tech }
                 }
                 break
             end
         end
     end
-
-    reset_statistics()
 end
 
 -- 查看交易信息
 commands.add_command("trade", nil, function(command)
     local player = game.get_player(command.player_index)
     if not player then return end
-    -- player.print('最大交易次数 ' .. storage.trade_init)
-    player.print({ "wn.galaxy-trade-max", storage.trade_init })
+    -- player.print('最大交易次数 ' .. storage.trade_max)
+    player.print({ "wn.galaxy-trade-max", storage.trade_max })
     -- player.print('完成交易次数 ' .. storage.trade_done)
     player.print({ "wn.galaxy-trade-done", storage.trade_done })
     -- player.print('\n星系[item=requester-chest]收购\n' ..
@@ -205,13 +186,27 @@ commands.add_command("trade", nil, function(command)
     player.print({ "wn.galaxy-trade-reward", storage.reward_text })
 end)
 
--- 左上角玩家信息
-local function rank_reset()
-    local player_list = ""
+-- 左上角统计信息
+local function galaxy_text_reset()
+    -- local player_list = ""
     -- for _, player in pairs(game.players) do
     --     player_list = player_list .. player.name .. "\n"
     -- end
-    storage.rank = { "wn.storage-players", player_list }
+    -- storage.galaxy_text = { "wn.storage-players", player_list }
+
+    storage.galaxy_text = ""
+    storage.galaxy_text = {
+        "", storage.galaxy_text,
+
+        { "wn.galaxy-trait-title" },
+        { "wn.galaxy-trait-solar",           storage.solar_power_multiplier },
+        { "wn.galaxy-trait-platform-amount", storage.max_platform_count },
+        { "wn.galaxy-trait-platform-size",   storage.max_platform_size },
+
+        {
+            "wn.galaxy-trade", storage.requester_text, storage.provider_text
+        }
+    }
 end
 
 -- 重置玩家
@@ -374,12 +369,16 @@ local function tech_reset()
     }
 
     local enabled_techs = {
-        'modular-armor', 'solar-panel-equipment', 'battery-equipment',
-        'personal-roboport-equipment', 'energy-shield-equipment'
+
     }
 
     local disabled_techs = {
-        'epic-quality', 'legendary-quality', 'power-armor', 'power-armor-mk2',
+        'heavy-armor',
+        'modular-armor', 'solar-panel-equipment',
+        'personal-roboport-equipment',
+        'battery-equipment', 'energy-shield-equipment',
+        -- 'epic-quality', 'legendary-quality',
+        'power-armor', 'power-armor-mk2',
         'mech-armor', 'fission-reactor-equipment', 'fusion-reactor-equipment',
 
         'battery-mk2-equipment', 'battery-mk3-equipment',
@@ -485,9 +484,10 @@ local function run_reset()
     storage.mining_needed = 10 + math.floor(math.pow(storage.run, 0.25))
 
     -- 更新UI信息
-    galaxy_reset()
     info_reset()
-    rank_reset()
+    galaxy_reset()
+    galaxy_text_reset()
+    statistics_text_update()
 
     -- 重置玩家
     for _, player in pairs(game.players) do player_reset(player) end
@@ -538,7 +538,7 @@ local function nauvis_init()
 
     storage.reward_flag = false
     storage.trade_done = 0
-    storage.trande_init = 0
+    storage.trade_max = 100
 
     storage.richness = 1
     storage.radius_of = {}
@@ -633,8 +633,12 @@ script.on_init(function()
     storage.run_gleba = 0
     storage.run_aquilo = 0
     storage.run_edge = 0
-    storage.run_promethium_tech = 0
     storage.run_shattered_planet = 0
+
+    storage.run_epic_quality = 0
+    storage.run_legendary_quality = 0
+    storage.run_research_productivity = 0
+
 
     storage.speed_penalty_enabled = false
     storage.speed_penalty_day = 5
@@ -651,6 +655,7 @@ script.on_init(function()
     -- first run bonus
     local force = game.forces.player
     force.technologies['space-platform'].research_recursive()
+    force.technologies['nuclear-fuel-reprocessing'].research_recursive()
 end)
 
 script.on_event(defines.events.on_gui_click,
@@ -748,15 +753,25 @@ script.on_event(defines.events.on_research_finished, function(event)
     elseif research_name == "mining-productivity-1" then
         storage.mining_current = 1
         print_tech_level()
+    elseif research_name == "epic-quality" then
+        -- 成就统计
+        if not storage.run_epic_quality_flag then
+            storage.run_epic_quality_flag = true
+            storage.run_epic_quality = storage.run_epic_quality + 1
+        end
+    elseif research_name == "legendary-quality" then
+        -- 成就统计
+        if not storage.run_legendary_quality_flag then
+            storage.run_legendary_quality_flag = true
+            storage.run_legendary_quality = storage.run_legendary_quality + 1
+        end
     elseif research_name == "research-productivity" then
         if (event.research.level == 2) then
             -- 成就统计
-            if not storage.run_promethium_tech_flag then
-                storage.run_promethium_tech_flag = true
-                storage.run_promethium_tech = storage.run_promethium_tech + 1
+            if not storage.run_research_productivity_flag then
+                storage.run_research_productivity_flag = true
+                storage.run_research_productivity = storage.run_research_productivity + 1
             end
-            -- 奖励已发放
-            storage.reward_flag = true
         else
             game.print({
                 "wn.congrats-research-productivity", event.research.level - 1
@@ -810,9 +825,6 @@ end)
 
 script.on_nth_tick(60 * 60, function()
     -- 自动交易 60秒一次
-    -- if not storage.reward_flag then storage.reward_flag = false end
-    -- if not storage.trade_done then storage.trade_done = 0 end
-    -- if not storage.trade_init then storage.trade_init = 0 end
 
     if storage.reward_flag then
         local chest = only_storage_chest()
@@ -836,7 +848,9 @@ script.on_nth_tick(60 * 60, function()
                 game.print({ "wn.give-reward-fail-not-enough-storage" })
             end
         end
-    elseif storage.trade_done < storage.trade_init then
+    end
+
+    if storage.trade_done < storage.trade_max then
         local requester = only_requester_chest()
         if not requester then
             game.print({ "wn.give-reward-fail-no-requester-chest" })
@@ -868,7 +882,7 @@ script.on_nth_tick(60 * 60, function()
                 game.print({
                     "wn.", storage.requester_text, storage.provider_text
                 })
-                if storage.trade_done == storage.trade_init then
+                if storage.trade_done == storage.trade_max then
                     game.print({ "wn.galaxy-trade-all-done" })
                 end
             else
@@ -929,7 +943,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_vulcanus_flag = true
         storage.run_vulcanus = storage.run_vulcanus + 1
         game.print({ "wn.congrats-first-visit", vulcanus })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
     end
 
@@ -937,7 +951,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_fulgora_flag = true
         storage.run_fulgora = storage.run_fulgora + 1
         game.print({ "wn.congrats-first-visit", fulgora })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
     end
 
@@ -945,7 +959,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_gleba_flag = true
         storage.run_gleba = storage.run_gleba + 1
         game.print({ "wn.congrats-first-visit", gleba })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
     end
 
@@ -953,7 +967,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_aquilo_flag = true
         storage.run_aquilo = storage.run_aquilo + 1
         game.print({ "wn.congrats-first-visit", aquilo })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
     end
 
@@ -961,7 +975,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_edge_flag = true
         storage.run_edge = storage.run_edge + 1
         game.print({ "wn.congrats-first-visit", edge })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
     end
 
@@ -969,7 +983,10 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.run_shattered_planet_flag = true
         storage.run_shattered_planet = storage.run_shattered_planet + 1
         game.print({ "wn.congrats-first-visit", shattered_planet })
-        reset_statistics()
+        statistics_text_update()
         redraw_player_gui()
+
+        -- 奖励发放
+        storage.reward_flag = true
     end
 end)
