@@ -994,6 +994,7 @@ end)
 -- print tile data
 function tile_checker(event)
     local surface_index = event.surface_index
+    if surface_index ~= 1 then return end  -- nauvis
     local surface = game.surfaces[surface_index]
     -- local position = event.tiles[1].position
     -- local tile = surface.get_tile(position).name or "NULL"
@@ -1017,7 +1018,8 @@ function tile_checker(event)
             surface.set_hidden_tile(position, double_hidden_tile)
         end
     end
-    game.print("tile place event cancelled.")
+    -- game.print("tile place event cancelled.")
 end
 
 script.on_event(defines.events.on_player_built_tile, tile_checker)
+script.on_event(defines.events.on_robot_built_tile, tile_checker)
