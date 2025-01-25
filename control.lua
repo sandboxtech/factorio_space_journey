@@ -69,7 +69,7 @@ local function statistics_text_update()
         "",
         { "wn.statistics-title" },
         "\n",
-        { "wn.statistics-run",                  storage.run },
+        { "wn.statistics-run",  storage.run },
         "\n",
         { "wn.statistics-run-vulcanus",         storage.run_vulcanus },
         { "wn.statistics-run-fulgora",          storage.run_fulgora },
@@ -557,6 +557,13 @@ local function nauvis_init()
     }
     protect(pad)
 
+    local bay
+    bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position = { x = -2, y = 6 }, force = 'player' }
+    protect(bay)
+
+    bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position = { x = 2, y = 6 }, force = 'player' }
+    protect(bay)
+
     local market = nauvis.create_entity {
         name = 'market',
         quality = legendary,
@@ -653,7 +660,8 @@ script.on_init(function()
     run_reset()
 
     -- first run bonus
-    -- local force = game.forces.player
+    local force = game.forces.player
+    force.technologies['rocket-silo'].research_recursive()
     -- force.technologies['space-platform'].research_recursive()
     -- force.technologies['nuclear-power'].research_recursive()
     -- force.technologies['nuclear-fuel-reprocessing'].research_recursive()
@@ -995,7 +1003,7 @@ end)
 -- print tile data
 function tile_checker(event)
     local surface_index = event.surface_index
-    if surface_index ~= 1 then return end  -- nauvis
+    if surface_index ~= 1 then return end -- nauvis
     local surface = game.surfaces[surface_index]
     -- local position = event.tiles[1].position
     -- local tile = surface.get_tile(position).name or "NULL"
@@ -1008,12 +1016,12 @@ function tile_checker(event)
     local hidden_tile
     local double_hidden_tile
     local position
-    for _, tile_data in ipairs(event.tiles) do 
+    for _, tile_data in ipairs(event.tiles) do
         position = tile_data.position
         hidden_tile = surface.get_hidden_tile(position)
         double_hidden_tile = surface.get_double_hidden_tile(position)
         if hidden_tile ~= nil then
-            surface.set_tiles({{name = hidden_tile, position = position}})
+            surface.set_tiles({ { name = hidden_tile, position = position } })
         end
         if double_hidden_tile ~= nil then
             surface.set_hidden_tile(position, double_hidden_tile)
