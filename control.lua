@@ -762,10 +762,12 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 
     local welcome = {}
     if player.online_time > 0 then
+        local last_delta = math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
+        local total_time = math.min(last_delta, math.floor(player.online_time / hour_to_tick))
         welcome = {
             "wn.welcome-player", player.name,
-            math.floor(player.online_time / hour_to_tick),
-            math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
+            total_time,
+            last_delta
         }
     else
         welcome = { "wn.welcome-new-player", player.name }
