@@ -728,31 +728,30 @@ script.on_init(function()
 
     -- first run bonus
     local force = game.forces.player
-    force.technologies['logistics'].research_recursive()
-    
-    
-    force.technologies['automation-3'].research_recursive()
-    force.technologies['quality-module-2'].research_recursive()
-    force.technologies['efficiency-module-2'].research_recursive()
-    force.technologies['speed-module-2'].research_recursive()
-    force.technologies['productivity-module-2'].research_recursive()
-    
-    force.technologies['rocket-silo'].research_recursive()
-    force.technologies['weapon-shooting-speed-6'].research_recursive()
-    force.technologies['physical-projectile-damage-6'].research_recursive()
-    force.technologies['solar-energy'].research_recursive()
-    force.technologies['electric-energy-distribution-2'].research_recursive()
-    force.technologies['electric-mining-drill'].research_recursive()
+    force.technologies['steel-processing'].researched = true
+    force.technologies['electric-energy-distribution-1'].researched = true -- 防止没木头卡关
+    force.technologies['electric-energy-distribution-2'].researched = true -- 防止雷星卡关
 
-    force.technologies['planet-discovery-vulcanus'].research_recursive()
-    force.technologies['planet-discovery-fulgora'].research_recursive()
-    force.technologies['planet-discovery-gleba'].research_recursive()
-    force.technologies['bulk-inserter'].research_recursive()
-    force.technologies['gun-turret'].research_recursive()
-    force.technologies['steel-axe'].research_recursive()
-    force.technologies['construction-robotics'].research_recursive()
-    force.technologies['construction-robotics'].research_recursive()
+    -- force.technologies['automation-3'].research_recursive()
+    -- force.technologies['quality-module-2'].research_recursive()
+    -- force.technologies['efficiency-module-2'].research_recursive()
+    -- force.technologies['speed-module-2'].research_recursive()
+    -- force.technologies['productivity-module-2'].research_recursive()
+    
+    -- force.technologies['rocket-silo'].research_recursive()
+    -- force.technologies['weapon-shooting-speed-6'].research_recursive()
+    -- force.technologies['physical-projectile-damage-6'].research_recursive()
+    -- force.technologies['solar-energy'].research_recursive()
+    -- force.technologies['electric-energy-distribution-2'].research_recursive()
+    -- force.technologies['electric-mining-drill'].research_recursive()
 
+    -- force.technologies['planet-discovery-vulcanus'].research_recursive()
+    -- force.technologies['planet-discovery-fulgora'].research_recursive()
+    -- force.technologies['planet-discovery-gleba'].research_recursive()
+    -- force.technologies['bulk-inserter'].research_recursive()
+    -- force.technologies['gun-turret'].research_recursive()
+    -- force.technologies['steel-axe'].research_recursive()
+    -- force.technologies['construction-robotics'].research_recursive()
 end)
 
 script.on_event(defines.events.on_gui_click,
