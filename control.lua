@@ -610,6 +610,10 @@ local function nauvis_init()
         end
     end
     if #tiles > 0 then nauvis.set_tiles(tiles) end
+    for _, tile in pairs(tiles) do
+        nauvis.set_hidden_tile(tile.position, nil)
+        nauvis.set_double_hidden_tile(tile.position, nil)
+    end
     tiles = {}
     for x = -7, 6, 1 do
         for y = -11, 22, 1 do
@@ -617,6 +621,10 @@ local function nauvis_init()
         end
     end
     if #tiles > 0 then nauvis.set_tiles(tiles) end
+    for _, tile in pairs(tiles) do
+        nauvis.set_hidden_tile(tile.position, nil)
+        nauvis.set_double_hidden_tile(tile.position, nil)
+    end
 
 
     -- 市场
@@ -747,7 +755,6 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
     -- local chunk_position = event.position
     local left_top = event.area.left_top
-
     -- 无敌虫巢和树和石头
     if surface.name == 'nauvis'
     then
@@ -1101,7 +1108,7 @@ function tile_checker(event)
     -- game.print("Hidden Tile: " .. hidden_tile)
     -- game.print("Double Hidden Tile: " .. double_hidden_tile)
 
-    for _, tile_data in ipairs(event.tiles) do
+    for _, tile_data in pairs(event.tiles) do
         local position = tile_data.position
         local hidden_tile = surface.get_hidden_tile(position)
         local double_hidden_tile = surface.get_double_hidden_tile(position)
