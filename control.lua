@@ -53,7 +53,7 @@ local function redraw_player_gui()
 end
 
 -- 手动重置nauvis
-commands.add_command("players_gui", nil, function(command)
+commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         redraw_player_gui()
@@ -172,7 +172,7 @@ local function galaxy_reset()
 end
 
 -- 查看交易信息
-commands.add_command("trade", nil, function(command)
+commands.add_command("trade", {"wn.trade-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player then return end
     -- player.print('最大交易次数 ' .. storage.trade_max)
@@ -355,7 +355,7 @@ local function nauvis_reset()
 end
 
 -- 手动重置nauvis
-commands.add_command("nauvis_reset", nil, function(command)
+commands.add_command("nauvis_reset", {"wn.nauvis-reset-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         nauvis_reset()
@@ -675,7 +675,7 @@ local function nauvis_init()
 end
 
 -- 手动初始化nauvis
-commands.add_command("nauvis_init", nil, function(command)
+commands.add_command("nauvis_init", {"wn.nauvis-init-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         nauvis_init()
@@ -790,6 +790,15 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
     if #tiles > 0 then surface.set_tiles(tiles) end
+    if surface == game.surfaces.nauvis then
+        local spawners = surface.find_entities_filtered {
+            area = area,
+            type = 'unit-spawner'
+        }
+        for _, spawner in pairs(spawners) do
+            protect(spawner)
+        end 
+    end    
 end)
 
 -- 飞船上限设置
@@ -865,7 +874,7 @@ script.on_event(defines.events.on_research_finished, function(event)
 end)
 
 -- 手动重置
-commands.add_command("run_reset", nil, function(command)
+commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         run_reset()
@@ -875,7 +884,7 @@ commands.add_command("run_reset", nil, function(command)
 end)
 
 -- 手动跃迁
-commands.add_command("warp", nil, function(command)
+commands.add_command("warp", {"wn.warp-help"}, function(command)
     local player_name = "<server>"
     local player = nil
     if command.player_index then
@@ -901,14 +910,14 @@ commands.add_command("warp", nil, function(command)
                 "wn.player-warp-2", player_name, storage.last_warp_count
             })
         else
-            game.print({ "wn.player-warp-3", player_name })
+            game.print({ "wn.player-warp-3", plaer_name })
             run_reset()
         end
     end
 end)
 
 script.on_nth_tick(60 * 60, function()
-    -- 自动交易 60秒一次
+    -- 动交易 60秒一次
 
     if storage.reward_flag then
         local chest = only_storage_chest()
