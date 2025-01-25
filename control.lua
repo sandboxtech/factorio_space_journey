@@ -691,7 +691,8 @@ end)
 script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
     local chunk_position = event.position
-    local left_top = event.area.left_top
+    local area = event.area
+    local left_top = area.left_top
 
     if not storage.radius_of then storage.radius_of = {} end -- migration
     local r = storage.radius_of[surface.name]
@@ -715,6 +716,15 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
     if #tiles > 0 then surface.set_tiles(tiles) end
+    if surface == game.surfaces.nauvis then
+        local spawners = surface.find_entities_filtered {
+            area = area,
+            type = 'unit-spawner'
+        }
+        for _, spawner in pairs(spawners) do
+            protect(spawner)
+        end 
+    end    
 end)
 
 -- 飞船上限设置
@@ -826,14 +836,14 @@ commands.add_command("warp", nil, function(command)
                 "wn.player-warp-2", player_name, storage.last_warp_count
             })
         else
-            game.print({ "wn.player-warp-3", player_name })
+            game.print({ "wn.player-warp-3", plaer_name })
             run_reset()
         end
     end
 end)
 
 script.on_nth_tick(60 * 60, function()
-    -- 自动交易 60秒一次
+    -- 动交易 60秒一次
 
     if storage.reward_flag then
         local chest = only_storage_chest()
