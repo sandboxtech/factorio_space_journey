@@ -144,6 +144,8 @@ local function galaxy_reset()
     storage.max_platform_count = math.random(1, 6)
     storage.max_platform_size = math.random(2, 5) * math.random(2, 5) * 32
 
+    -- 不知道这行有没有用
+    game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
 
     local force = game.forces.player
 
