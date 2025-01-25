@@ -53,7 +53,7 @@ local function redraw_player_gui()
 end
 
 -- 手动重置nauvis
-commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
+commands.add_command("players_gui", { "wn.players-gui-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         redraw_player_gui()
@@ -172,7 +172,7 @@ local function galaxy_reset()
 end
 
 -- 查看交易信息
-commands.add_command("trade", {"wn.trade-help"}, function(command)
+commands.add_command("trade", { "wn.trade-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player then return end
     -- player.print('最大交易次数 ' .. storage.trade_max)
@@ -339,23 +339,48 @@ local market_y = -8
 
 -- 重置母星
 local function nauvis_reset()
-    -- nauvis seed 为 0，才有用
+    -- -- nauvis seed 0，才有用
     local nauvis = game.surfaces.nauvis
     nauvis.regenerate_entity('uranium-ore', { { 4, 2 } })
-    nauvis.regenerate_entity(nil, { { -3, 0 }, { -3, 1 } })
-    nauvis.regenerate_entity(nil, { { -2, 0 }, { -2, 1 } })
+    -- nauvis.regenerate_entity(nil, { { -3, 0 }, { -3, 1 } })
+    -- nauvis.regenerate_entity(nil, { { -2, 0 }, { -2, 1 } })
 
-    -- 市场
+    local nauvis = game.surfaces.nauvis
+    local market_x = -1
+    local market_y = -8
     local market = nauvis.find_entity({ name = 'market', quality = legendary },
         { x = market_x, y = market_y })
+
     if not market then
         game.print({ "wn.market-not-found" })
         return
     end
+
+
+    local items_2 = { 'raw-fish', 'biter-egg', 'uranium-ore', }
+
+    for _, item in pairs(items_2) do
+        market.add_market_item {
+            price = {
+                { name = 'coin', quality = rare, count = 1 }
+            },
+            offer = { type = "give-item", item = item }
+        }
+    end
+
+    -- -- local items_1 = { 'wood', 'iron-ore', 'copper-ore', 'stone', 'coal', 'water-barrel', 'crude-oil-barrel' }
+    -- local items_1 = { 'wood', 'iron-ore', 'copper-ore', 'stone', 'coal', 'water-barrel', 'crude-oil-barrel' }
+
+    -- for _, item in pairs(items_1) do
+    --     market.add_market_item {
+    --         price = { { name = 'coin', count = 1 } },
+    --         offer = { type = "give-item", item = item }
+    --     }
+    -- end
 end
 
 -- 手动重置nauvis
-commands.add_command("nauvis_reset", {"wn.nauvis-reset-help"}, function(command)
+commands.add_command("nauvis_reset", { "wn.nauvis-reset-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         nauvis_reset()
@@ -373,10 +398,8 @@ end)
 local function tech_reset()
     local force = game.forces.player
 
-    -- 科技修改
     local researched_techs = {
         'biter-egg-handling',
-        -- 'oil-processing', 'uranium-processing'
     }
 
     local enabled_techs = {
@@ -385,15 +408,12 @@ local function tech_reset()
 
     local disabled_techs = {
         'cliff-explosives', 'atomic-bomb',
-        -- evil
         'belt-immunity-equipment', 'night-vision-equipment',
-        'discharge-defense-equipment', 'toolbelt', -- toolbelt 防止跃迁炸背包
-        -- evil
+        'discharge-defense-equipment', 'toolbelt',
         'heavy-armor',
         'modular-armor', 'solar-panel-equipment',
         'personal-roboport-equipment',
         'battery-equipment', 'energy-shield-equipment',
-        -- 'epic-quality', 'legendary-quality',
         'power-armor', 'power-armor-mk2',
         'mech-armor', 'fission-reactor-equipment', 'fusion-reactor-equipment',
 
@@ -539,18 +559,16 @@ end
 local function nauvis_init()
     local nauvis = game.surfaces.nauvis
 
-
     -- seed 0
-    local nauvis = game.surfaces.nauvis
-    local trees = nauvis.find_entities_filtered({
-        area = { left_top = { x = -96, y = 8 }, right_bottom = { x = -32, y = 44 } },
-        type = 'tree'
-    })
-    if trees then
-        for i, tree in pairs(trees) do
-            tree.destroy()
-        end
-    end
+    -- local trees = nauvis.find_entities_filtered({
+    --     area = { left_top = { x = -96, y = 8 }, right_bottom = { x = -32, y = 44 } },
+    --     type = 'tree'
+    -- })
+    -- if trees then
+    --     for i, tree in pairs(trees) do
+    --         tree.destroy()
+    --     end
+    -- end
     -- end seed 0
 
     storage.requester_x = 1
@@ -628,26 +646,6 @@ local function nauvis_init()
     }
     protect(market)
 
-    local items_1 = { 'wood', 'iron-ore', 'copper-ore', 'stone', 'coal', 'water-barrel', 'crude-oil-barrel' }
-
-    for _, item in pairs(items_1) do
-        market.add_market_item {
-            price = { { name = 'coin', count = 1 } },
-            offer = { type = "give-item", item = item }
-        }
-    end
-
-    local items_2 = { 'uranium-ore', 'biter-egg', 'raw-fish' }
-
-    for _, item in pairs(items_2) do
-        market.add_market_item {
-            price = {
-                { name = 'coin', quality = rare, count = 1 }
-                -- {name = 'cryogenic-science-pack', quality = rare, count = 1}
-            },
-            offer = { type = "give-item", item = item }
-        }
-    end
 
     local requester_chest = nauvis.create_entity({
         name = 'requester-chest',
@@ -675,7 +673,7 @@ local function nauvis_init()
 end
 
 -- 手动初始化nauvis
-commands.add_command("nauvis_init", {"wn.nauvis-init-help"}, function(command)
+commands.add_command("nauvis_init", { "wn.nauvis-init-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         nauvis_init()
@@ -714,12 +712,39 @@ script.on_init(function()
 
     run_reset()
 
+    local force = game.forces.player
+    for i, tech in pairs(force.technologies)
+    do
+        force.technologies[tech.name].researched = false        
+    end
+
     -- first run bonus
     local force = game.forces.player
+    force.technologies['logistics'].research_recursive()
+    
+    
+    force.technologies['automation-3'].research_recursive()
+    force.technologies['quality-module-2'].research_recursive()
+    force.technologies['efficiency-module-2'].research_recursive()
+    force.technologies['speed-module-2'].research_recursive()
+    force.technologies['productivity-module-2'].research_recursive()
+    
     force.technologies['rocket-silo'].research_recursive()
-    -- force.technologies['space-platform'].research_recursive()
-    -- force.technologies['nuclear-power'].research_recursive()
-    -- force.technologies['nuclear-fuel-reprocessing'].research_recursive()
+    force.technologies['weapon-shooting-speed-6'].research_recursive()
+    force.technologies['physical-projectile-damage-6'].research_recursive()
+    force.technologies['solar-energy'].research_recursive()
+    force.technologies['electric-energy-distribution-2'].research_recursive()
+    force.technologies['electric-mining-drill'].research_recursive()
+
+    force.technologies['planet-discovery-vulcanus'].research_recursive()
+    force.technologies['planet-discovery-fulgora'].research_recursive()
+    force.technologies['planet-discovery-gleba'].research_recursive()
+    force.technologies['bulk-inserter'].research_recursive()
+    force.technologies['gun-turret'].research_recursive()
+    force.technologies['steel-axe'].research_recursive()
+    force.technologies['construction-robotics'].research_recursive()
+    force.technologies['construction-robotics'].research_recursive()
+
 end)
 
 script.on_event(defines.events.on_gui_click,
@@ -734,7 +759,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
         welcome = {
             "wn.welcome-player", player.name,
             math.floor(player.online_time / hour_to_tick),
-            math.floor((game.tick - player.last_online) / hour_to_tick)
+            math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
         }
     else
         welcome = { "wn.welcome-new-player", player.name }
@@ -748,9 +773,9 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     -- local chunk_position = event.position
     local left_top = event.area.left_top
 
-    -- 无敌虫巢和树和石头
-    if surface.name == 'nauvis'
+    if surface == game.surfaces.nauvis
     then
+        -- 无敌虫巢和树和石头
         local entities_list = { 'unit-spawner', 'tree', 'simple-entity', }
 
         for _, entity_type in pairs(entities_list)
@@ -764,6 +789,16 @@ script.on_event(defines.events.on_chunk_generated, function(event)
                     entity.minable = false
                     entity.destructible = false
                 end
+            end
+        end
+
+        -- 超富矿
+        local ores = game.surfaces[1].find_entities_filtered { area = event.area,
+            name = { "iron-ore", "copper-ore", "stone", "coal", "uranium-ore" } }
+
+        if ores then
+            for i, entity in pairs(ores) do
+                entity.amount = math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
             end
         end
     end
@@ -790,15 +825,6 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
     if #tiles > 0 then surface.set_tiles(tiles) end
-    if surface == game.surfaces.nauvis then
-        local spawners = surface.find_entities_filtered {
-            area = area,
-            type = 'unit-spawner'
-        }
-        for _, spawner in pairs(spawners) do
-            protect(spawner)
-        end 
-    end    
 end)
 
 -- 飞船上限设置
@@ -874,7 +900,7 @@ script.on_event(defines.events.on_research_finished, function(event)
 end)
 
 -- 手动重置
-commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
+commands.add_command("run_reset", { "wn.run-reset-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         run_reset()
@@ -884,7 +910,7 @@ commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
 end)
 
 -- 手动跃迁
-commands.add_command("warp", {"wn.warp-help"}, function(command)
+commands.add_command("warp", { "wn.warp-help" }, function(command)
     local player_name = "<server>"
     local player = nil
     if command.player_index then
