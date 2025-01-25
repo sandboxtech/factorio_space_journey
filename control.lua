@@ -653,9 +653,10 @@ script.on_init(function()
     run_reset()
 
     -- first run bonus
-    local force = game.forces.player
-    force.technologies['space-platform'].research_recursive()
-    force.technologies['nuclear-fuel-reprocessing'].research_recursive()
+    -- local force = game.forces.player
+    -- force.technologies['space-platform'].research_recursive()
+    -- force.technologies['nuclear-power'].research_recursive()
+    -- force.technologies['nuclear-fuel-reprocessing'].research_recursive()
 end)
 
 script.on_event(defines.events.on_gui_click,
