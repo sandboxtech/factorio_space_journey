@@ -339,44 +339,41 @@ local market_y = -8
 
 -- 重置母星
 local function nauvis_reset()
-    -- -- nauvis seed 0，才有用
-    local nauvis = game.surfaces.nauvis
-    nauvis.regenerate_entity('uranium-ore', { { 4, 2 } })
+    -- nauvis.regenerate_entity('uranium-ore', { { 4, 2 } })
     -- nauvis.regenerate_entity(nil, { { -3, 0 }, { -3, 1 } })
     -- nauvis.regenerate_entity(nil, { { -2, 0 }, { -2, 1 } })
 
     local nauvis = game.surfaces.nauvis
-    local market_x = -1
-    local market_y = -8
-    local market = nauvis.find_entity({ name = 'market', quality = legendary },
-        { x = market_x, y = market_y })
+    local markets = nauvis.find_entities_filtered { area = { { -1, -7 }, { 0, -8 } }, type = "market" }
 
-    if not market then
+    if #markets ~= 1 then
         game.print({ "wn.market-not-found" })
         return
     end
 
+    local market = markets[1]
+    market.clear_market_items()
+
+    local items_1 = { 'wood', }
+
+    for _, item in pairs(items_1) do
+        market.add_market_item {
+            price = { { name = 'coin', count = 1 } },
+            offer = { type = "give-item", item = item }
+        }
+    end
 
     local items_2 = { 'raw-fish', 'biter-egg', 'uranium-ore', }
 
     for _, item in pairs(items_2) do
         market.add_market_item {
             price = {
-                { name = 'coin', quality = rare, count = 1 }
+                { name = 'coin', quality = rare, count = 1 },
             },
             offer = { type = "give-item", item = item }
         }
     end
-
-    -- -- local items_1 = { 'wood', 'iron-ore', 'copper-ore', 'stone', 'coal', 'water-barrel', 'crude-oil-barrel' }
-    -- local items_1 = { 'wood', 'iron-ore', 'copper-ore', 'stone', 'coal', 'water-barrel', 'crude-oil-barrel' }
-
-    -- for _, item in pairs(items_1) do
-    --     market.add_market_item {
-    --         price = { { name = 'coin', count = 1 } },
-    --         offer = { type = "give-item", item = item }
-    --     }
-    -- end
+    
 end
 
 -- 手动重置nauvis
@@ -723,7 +720,7 @@ script.on_init(function()
     local force = game.forces.player
     for i, tech in pairs(force.technologies)
     do
-        force.technologies[tech.name].researched = false        
+        force.technologies[tech.name].researched = false
     end
 
     -- first run bonus
@@ -737,7 +734,7 @@ script.on_init(function()
     -- force.technologies['efficiency-module-2'].research_recursive()
     -- force.technologies['speed-module-2'].research_recursive()
     -- force.technologies['productivity-module-2'].research_recursive()
-    
+
     -- force.technologies['rocket-silo'].research_recursive()
     -- force.technologies['weapon-shooting-speed-6'].research_recursive()
     -- force.technologies['physical-projectile-damage-6'].research_recursive()
