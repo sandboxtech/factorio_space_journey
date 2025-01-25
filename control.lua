@@ -611,8 +611,8 @@ local function nauvis_init()
     end
     if #tiles > 0 then nauvis.set_tiles(tiles) end
     for _, tile in pairs(tiles) do
-        nauvis.set_hidden_tile(tile.position, nil)
         nauvis.set_double_hidden_tile(tile.position, nil)
+        nauvis.set_hidden_tile(tile.position, nil)
     end
     tiles = {}
     for x = -7, 6, 1 do
@@ -622,8 +622,8 @@ local function nauvis_init()
     end
     if #tiles > 0 then nauvis.set_tiles(tiles) end
     for _, tile in pairs(tiles) do
-        nauvis.set_hidden_tile(tile.position, nil)
         nauvis.set_double_hidden_tile(tile.position, nil)
+        nauvis.set_hidden_tile(tile.position, nil)
     end
 
 
