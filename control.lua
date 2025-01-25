@@ -4,6 +4,9 @@
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
+local version = 20250125
+local admin = 'hncs' .. 'ltok'
+
 local vulcanus = 'vulcanus'
 local fulgora = 'fulgora'
 local gleba = 'gleba'
@@ -61,7 +64,7 @@ end)
 
 -- 左上角游戏教程信息
 local function info_reset()
-    storage.info = { "wn.storage-info", storage.mining_needed }
+    storage.info = { "wn.introduction", storage.mining_needed }
 end
 
 local function statistics_text_update()
@@ -225,7 +228,7 @@ end
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
-    if player.name == 'hncsltok' then player.admin = true end
+    if player.name == admin then player.admin = true end
     player_reset(player)
 end)
 
@@ -242,10 +245,16 @@ script.on_event(defines.events.on_surface_created, function(event)
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
 
-    local r = storage.radius *
-        (0.5 + math.random() + 2 * math.random() * math.random())
-    r = math.max(256, r)
-    r = math.min(1024, r)
+    local r
+    if surface.name == 'nauvis' then
+        r = storage.radius
+    else
+        r = storage.radius *
+            (0.5 + math.random() + 2 * math.random() * math.random())
+        r = math.max(512, r)
+        r = math.min(2048, r)
+    end
+
 
     if not storage.radius_of then storage.radius_of = {} end -- migration
     storage.radius_of[surface.name] = r
@@ -330,10 +339,11 @@ local market_y = -8
 
 -- 重置母星
 local function nauvis_reset()
-    local nauvis = game.surfaces.nauvis
     -- nauvis seed 为 0，才有用
+    local nauvis = game.surfaces.nauvis
     nauvis.regenerate_entity('uranium-ore', { { 4, 2 } })
     nauvis.regenerate_entity(nil, { { -3, 0 }, { -3, 1 } })
+    nauvis.regenerate_entity(nil, { { -2, 0 }, { -2, 1 } })
 
     -- 市场
     local market = nauvis.find_entity({ name = 'market', quality = legendary },
@@ -365,7 +375,8 @@ local function tech_reset()
 
     -- 科技修改
     local researched_techs = {
-        'biter-egg-handling', 'oil-processing', 'uranium-processing'
+        'biter-egg-handling',
+        -- 'oil-processing', 'uranium-processing'
     }
 
     local enabled_techs = {
@@ -373,6 +384,11 @@ local function tech_reset()
     }
 
     local disabled_techs = {
+        'cliff-explosives', 'atomic-bomb',
+        -- evil
+        'belt-immunity-equipment', 'night-vision-equipment',
+        'discharge-defense-equipment', 'toolbelt', -- toolbelt 防止跃迁炸背包
+        -- evil
         'heavy-armor',
         'modular-armor', 'solar-panel-equipment',
         'personal-roboport-equipment',
@@ -388,8 +404,7 @@ local function tech_reset()
     }
 
     local hidden_techs = {
-        'belt-immunity-equipment', 'night-vision-equipment',
-        'discharge-defense-equipment', 'toolbelt' -- toolbelt 防止跃迁炸背包
+
     }
 
     for _, tech_name in pairs(researched_techs) do
@@ -481,7 +496,7 @@ local function run_reset()
 
     -- 更新主线任务
     storage.mining_current = 0
-    storage.mining_needed = 10 + math.floor(math.pow(storage.run, 0.25))
+    storage.mining_needed = 30 -- + math.floor(math.pow(storage.run, 0.25))
 
     -- 更新UI信息
     info_reset()
@@ -524,6 +539,20 @@ end
 local function nauvis_init()
     local nauvis = game.surfaces.nauvis
 
+
+    -- seed 0
+    local nauvis = game.surfaces.nauvis
+    local trees = nauvis.find_entities_filtered({
+        area = { left_top = { x = -96, y = 8 }, right_bottom = { x = -32, y = 44 } },
+        type = 'tree'
+    })
+    if trees then
+        for i, tree in pairs(trees) do
+            tree.destroy()
+        end
+    end
+    -- end seed 0
+
     storage.requester_x = 1
     storage.requester_y = -7
 
@@ -545,8 +574,9 @@ local function nauvis_init()
     storage.radius = math.ceil(math.max(nauvis.map_gen_settings.width / 2,
             nauvis.map_gen_settings.height / 2)) -
         32
-    storage.radius = math.min(256, storage.radius)
+    storage.radius = math.min(1024, storage.radius)
     storage.radius = math.max(128, storage.radius)
+    game.print(storage.radius)
 
     -- [item=cargo-landing-pad]
     local pad = nauvis.create_entity {
@@ -557,13 +587,39 @@ local function nauvis_init()
     }
     protect(pad)
 
-    local bay
-    bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position = { x = -2, y = 6 }, force = 'player' }
-    protect(bay)
 
-    bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position = { x = 2, y = 6 }, force = 'player' }
-    protect(bay)
+    for y = 1, 4
+    do
+        for x = 1, 2
+        do
+            local bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position =
+            { x = -6 + 4 * x, y = 2 + 4 * y }, force = 'player' }
+            protect(bay)
+        end
+    end
 
+    -- local silo = game.surfaces.nauvis.create_entity { name = 'rocket-silo', quality = 'legendary', position =
+    -- { x = 0, y = -16 }, force = 'player' }
+    -- protect(silo)
+
+    -- 地板
+    local tiles = {}
+    for x = -8, 7, 1 do
+        for y = -12, 23, 1 do
+            table.insert(tiles, { name = 'refined-concrete', position = { x, y } })
+        end
+    end
+    if #tiles > 0 then nauvis.set_tiles(tiles) end
+    tiles = {}
+    for x = -7, 6, 1 do
+        for y = -11, 22, 1 do
+            table.insert(tiles, { name = 'foundation', position = { x, y } })
+        end
+    end
+    if #tiles > 0 then nauvis.set_tiles(tiles) end
+
+
+    -- 市场
     local market = nauvis.create_entity {
         name = 'market',
         quality = legendary,
@@ -632,7 +688,6 @@ end)
 script.on_init(function()
     storage.generator = game.create_random_generator()
 
-    local nauvis = game.surfaces.nauvis
     nauvis_init()
 
     storage.run_vulcanus = 0
@@ -690,22 +745,42 @@ end)
 -- 星球圆形地块生成
 script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
-    local chunk_position = event.position
+    -- local chunk_position = event.position
     local left_top = event.area.left_top
 
+    -- 无敌虫巢和树和石头
+    if surface.name == 'nauvis'
+    then
+        local entities_list = { 'unit-spawner', 'tree', 'simple-entity', }
+
+        for _, entity_type in pairs(entities_list)
+        do
+            local entities = surface.find_entities_filtered({
+                area = event.area,
+                type = entity_type
+            })
+            if entities then
+                for i, entity in pairs(entities) do
+                    entity.minable = false
+                    entity.destructible = false
+                end
+            end
+        end
+    end
+
+    -- 圆形地图
     if not storage.radius_of then storage.radius_of = {} end -- migration
     local r = storage.radius_of[surface.name]
     if not r then                                            -- migration
         r = storage.radius
     end
-
     local chunk_size = 32
 
-    tiles = {}
+    local tiles = {}
     local cx = 0.5
     local cy = 0.5
-    for x = 0, chunk_size - 1, 1 do
-        for y = 0, chunk_size - 1, 1 do
+    for x = -1, chunk_size, 1 do
+        for y = -1, chunk_size, 1 do
             local px = left_top.x + x
             local py = left_top.y + y
             if (px - cx) * (px - cx) + (py - cy) * (py - cy) > r * r then
@@ -1002,6 +1077,9 @@ end)
 
 -- print tile data
 function tile_checker(event)
+    local player = game.get_player(event.player_index)
+    if player.name == admin then return end
+
     local surface_index = event.surface_index
     if surface_index ~= 1 then return end -- nauvis
     local surface = game.surfaces[surface_index]
@@ -1013,13 +1091,17 @@ function tile_checker(event)
     -- game.print("Tile: " .. tile)
     -- game.print("Hidden Tile: " .. hidden_tile)
     -- game.print("Double Hidden Tile: " .. double_hidden_tile)
-    local hidden_tile
-    local double_hidden_tile
-    local position
+
     for _, tile_data in ipairs(event.tiles) do
-        position = tile_data.position
-        hidden_tile = surface.get_hidden_tile(position)
-        double_hidden_tile = surface.get_double_hidden_tile(position)
+        local position = tile_data.position
+        local hidden_tile = surface.get_hidden_tile(position)
+        local double_hidden_tile = surface.get_double_hidden_tile(position)
+
+        -- if hidden_tile == 'empty-space' then
+        --     surface.set_tiles({ { name = 'empty-space', position = position } })
+        --     -- surface.set_hidden_tile(position, 'empty-space')
+        -- end
+
         if hidden_tile ~= nil then
             surface.set_tiles({ { name = hidden_tile, position = position } })
         end
