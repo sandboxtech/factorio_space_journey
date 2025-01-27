@@ -728,8 +728,8 @@ script.on_init(function()
     -- first run bonus
     local force = game.forces.player
     force.technologies['steel-processing'].researched = true
-    force.technologies['electric-energy-distribution-1'].researched = true -- 防止没木头卡关
-    force.technologies['electric-energy-distribution-2'].researched = true -- 防止雷星卡关
+    force.technologies['electric-energy-distribution-1'].researched = true
+    force.technologies['electric-energy-distribution-2'].researched = true
 
     -- force.technologies['automation-3'].research_recursive()
     -- force.technologies['quality-module-2'].research_recursive()
