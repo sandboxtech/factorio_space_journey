@@ -109,7 +109,7 @@ end
 commands.add_command("statistics_text_update", '?', function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
-        redraw_player_gui()
+        statistics_text_update()
     else
         player.print(not_admin_text)
     end
