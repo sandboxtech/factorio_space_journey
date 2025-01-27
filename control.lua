@@ -376,7 +376,6 @@ local function nauvis_reset()
             offer = { type = "give-item", item = item }
         }
     end
-    
 end
 
 -- 手动重置nauvis
@@ -459,6 +458,21 @@ local function run_reset()
     storage.run = storage.run + 1
     storage.run_start_tick = game.tick
 
+    -- 母星污染
+    game.map_settings.pollution.enabled = true
+
+    game.map_settings.pollution.min_to_diffuse = 1500
+    game.map_settings.pollution.diffusion_ratio = 0.0001
+
+    game.map_settings.pollution.expected_max_per_chunk = 1500
+    game.map_settings.pollution.min_to_show_per_chunk = 5
+
+    game.map_settings.pollution.ageing = 0.1
+    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = math.max(0.1,
+        100 / math.max(10, storage.run))
+
+    game.map_settings.pollution.min_pollution_to_damage_trees = 1000000000
+    game.map_settings.pollution.pollution_with_max_forest_damage = 1000000000
     -- -- 移除离线玩家
     -- local players_to_remove = {}
     -- for _, player in pairs(game.players) do
@@ -559,17 +573,16 @@ end
 local function nauvis_init()
     local nauvis = game.surfaces.nauvis
 
-    -- seed 0
     -- local trees = nauvis.find_entities_filtered({
-    --     area = { left_top = { x = -96, y = 8 }, right_bottom = { x = -32, y = 44 } },
+    --     area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
     --     type = 'tree'
     -- })
     -- if trees then
     --     for i, tree in pairs(trees) do
-    --         tree.destroy()
+    --         tree.tree_gray_stage_index = 1
+    --         tree.tree_stage_index = 1
     --     end
     -- end
-    -- end seed 0
 
     storage.requester_x = 1
     storage.requester_y = -7
@@ -687,6 +700,60 @@ commands.add_command("nauvis_init", { "wn.nauvis-init-help" }, function(command)
         nauvis_init()
     else
         player.print(not_admin_text)
+    end
+end)
+
+commands.add_command("tree_min", '', function(command)
+    local trees = game.surfaces.nauvis.find_entities_filtered({
+        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
+        type = 'tree'
+    })
+    if trees then
+        for i, tree in pairs(trees) do
+            if tree.tree_stage_index_max > 0 then
+                tree.tree_stage_index = tree.tree_stage_index_max
+            end
+            if tree.tree_color_index_max > 0 then
+                tree.tree_color_index = tree.tree_color_index_max
+            end
+            tree.tree_gray_stage_index = 15
+        end
+    end
+end)
+
+commands.add_command("tree_max", '', function(command)
+    local trees = game.surfaces.nauvis.find_entities_filtered({
+        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
+        type = 'tree'
+    })
+    if trees then
+        for i, tree in pairs(trees) do
+            if tree.tree_stage_index_max > 0 then
+                tree.tree_stage_index = 1
+            end
+            if tree.tree_color_index_max > 0 then
+                tree.tree_color_index = 1
+            end
+            tree.tree_gray_stage_index = 0
+        end
+    end
+end)
+
+commands.add_command("tree_random", '', function(command)
+    local trees = game.surfaces.nauvis.find_entities_filtered({
+        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
+        type = 'tree'
+    })
+    if trees then
+        for i, tree in pairs(trees) do
+            if tree.tree_stage_index_max > 0 then
+                tree.tree_stage_index = math.random(1, tree.tree_stage_index_max)
+            end
+            if tree.tree_color_index_max > 0 then
+                tree.tree_color_index = math.random(1, tree.tree_color_index_max)
+            end
+            tree.tree_gray_stage_index = math.random(1, 15)
+        end
     end
 end)
 
@@ -1121,8 +1188,10 @@ end)
 
 -- print tile data
 function tile_checker(event)
-    local player = game.get_player(event.player_index)
-    if player.name == admin then return end
+    -- if event.player_index then
+    --     local player = game.get_player(event.player_index)
+    --     if player.name == admin then return end
+    -- end
 
     local surface_index = event.surface_index
     if surface_index ~= 1 then return end -- nauvis
