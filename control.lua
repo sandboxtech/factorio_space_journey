@@ -52,7 +52,7 @@ local function redraw_player_gui()
 end
 
 -- 手动重置nauvis
-commands.add_command("players_gui", { "wn.players-gui-help" }, function(command)
+commands.add_command("redraw_player_gui", { "wn.players-gui-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         redraw_player_gui()
@@ -104,6 +104,19 @@ local function statistics_text_update()
         make_tech('research-productivity'),
     }
 end
+
+-- 手动重置nauvis
+commands.add_command("statistics_text_update", '?', function(command)
+    local player = game.get_player(command.player_index)
+    if not player or player.admin then
+        redraw_player_gui()
+    else
+        player.print(not_admin_text)
+    end
+end)
+
+
+
 
 -- 星系信息
 local function galaxy_reset()
@@ -705,7 +718,7 @@ commands.add_command("nauvis_init", { "wn.nauvis-init-help" }, function(command)
     end
 end)
 
-commands.add_command("tree_min", '', function(command)
+commands.add_command("tree_min", '?', function(command)
     local trees = game.surfaces.nauvis.find_entities_filtered({
         area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
         type = 'tree'
@@ -723,7 +736,7 @@ commands.add_command("tree_min", '', function(command)
     end
 end)
 
-commands.add_command("tree_max", '', function(command)
+commands.add_command("tree_max", '?', function(command)
     local trees = game.surfaces.nauvis.find_entities_filtered({
         area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
         type = 'tree'
@@ -741,7 +754,7 @@ commands.add_command("tree_max", '', function(command)
     end
 end)
 
-commands.add_command("tree_random", '', function(command)
+commands.add_command("tree_random", '?', function(command)
     local trees = game.surfaces.nauvis.find_entities_filtered({
         area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
         type = 'tree'
@@ -764,16 +777,6 @@ script.on_init(function()
     nauvis_init()
 
     storage.statistics = {}
-    -- storage.run_vulcanus = 0
-    -- storage.run_fulgora = 0
-    -- storage.run_gleba = 0
-    -- storage.run_aquilo = 0
-    -- storage.run_edge = 0
-    -- storage.run_shattered_planet = 0
-    -- storage.run_epic_quality = 0
-    -- storage.run_legendary_quality = 0
-    -- storage.run_research_productivity = 0
-
 
     storage.speed_penalty_enabled = false
     storage.speed_penalty_day = 5
@@ -1149,14 +1152,6 @@ function tile_checker(event)
     local surface_index = event.surface_index
     if surface_index ~= 1 then return end -- nauvis
     local surface = game.surfaces[surface_index]
-    -- local position = event.tiles[1].position
-    -- local tile = surface.get_tile(position).name or "NULL"
-    -- local hidden_tile = surface.get_hidden_tile(position) or "NULL"
-    -- local double_hidden_tile = surface.get_double_hidden_tile(position) or "NULL"
-    -- game.print("Tile Data at [gps=" .. position.x .. "," .. position.y .. ","..surface.name.."]")
-    -- game.print("Tile: " .. tile)
-    -- game.print("Hidden Tile: " .. hidden_tile)
-    -- game.print("Double Hidden Tile: " .. double_hidden_tile)
 
     for _, tile_data in pairs(event.tiles) do
         local position = tile_data.position
@@ -1175,7 +1170,6 @@ function tile_checker(event)
             surface.set_hidden_tile(position, double_hidden_tile)
         end
     end
-    -- game.print("tile place event cancelled.")
 end
 
 script.on_event(defines.events.on_player_built_tile, tile_checker)
