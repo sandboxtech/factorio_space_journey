@@ -4,7 +4,6 @@
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
-local version = 20250125
 local admin = 'hncs' .. 'ltok'
 
 local vulcanus = 'vulcanus'
@@ -15,9 +14,9 @@ local edge = 'solar-system-edge'
 local shattered_planet = 'shattered-planet'
 
 local normal = 'normal'
-local uncommon = 'uncommon'
+-- local uncommon = 'uncommon'
 local rare = 'rare'
-local epic = 'epic'
+-- local epic = 'epic'
 local legendary = 'legendary'
 local not_admin_text = { "wn.permission-denied" }
 
@@ -67,6 +66,14 @@ local function info_reset()
     storage.info = { "wn.introduction", storage.mining_needed }
 end
 
+local function make_location(name)
+    return { "wn.statistics-run-location", storage.statistics[name] or 0, name }
+end
+
+local function make_tech(name)
+    return { "wn.statistics-run-tech", storage.statistics[name] or 0, name }
+end
+
 local function statistics_text_update()
     storage.statistics_text = {
         "",
@@ -74,31 +81,31 @@ local function statistics_text_update()
         "\n",
         { "wn.statistics-run",  storage.run },
         "\n",
-        { "wn.statistics-run-vulcanus",         storage.run_vulcanus },
-        { "wn.statistics-run-fulgora",          storage.run_fulgora },
-        { "wn.statistics-run-gleba",            storage.run_gleba },
-        { "wn.statistics-run-aquilo",           storage.run_aquilo },
-        { "wn.statistics-run-edge",             storage.run_edge },
-        { "wn.statistics-run-shattered-planet", storage.run_shattered_planet },
+        make_location(vulcanus),
+        make_location(fulgora),
+        make_location(gleba),
+        make_location(aquilo),
+        make_location(edge),
+        make_location(shattered_planet),
         "\n",
-        { "wn.statistics-run-epic-quality",          storage.run_research_productivity },
-        { "wn.statistics-run-legendary-quality",     storage.run_research_productivity },
-        { "wn.statistics-run-research-productivity", storage.run_research_productivity },
+        make_tech('epic-quality'),
+        make_tech('legendary-quality'),
+        make_tech('research-productivity'),
     }
 end
 
 -- 星系信息
 local function galaxy_reset()
-    storage.run_vulcanus_flag = false
-    storage.run_fulgora_flag = false
-    storage.run_gleba_flag = false
-    storage.run_aquilo_flag = false
-    storage.run_edge_flag = false
-    storage.run_shattered_planet_flag = false
-
-    storage.run_research_productivity_flag = false
-    storage.run_epic_quality_flag = false
-    storage.run_legendary_quality_flag = false
+    storage.statistics_flags = {}
+    -- storage.run_vulcanus_flag = false
+    -- storage.run_fulgora_flag = false
+    -- storage.run_gleba_flag = false
+    -- storage.run_aquilo_flag = false
+    -- storage.run_edge_flag = false
+    -- storage.run_shattered_planet_flag = false
+    -- storage.run_research_productivity_flag = false
+    -- storage.run_epic_quality_flag = false
+    -- storage.run_legendary_quality_flag = false
 
     -- 已经交易次数
     storage.trade_done = 0
@@ -253,8 +260,8 @@ script.on_event(defines.events.on_surface_created, function(event)
     else
         r = storage.radius *
             (0.5 + math.random() + 2 * math.random() * math.random())
-        r = math.max(512, r)
-        r = math.min(2048, r)
+        r = math.max(256, r)
+        r = math.min(1024, r)
     end
 
 
@@ -457,6 +464,11 @@ local function run_reset()
 
     storage.run = storage.run + 1
     storage.run_start_tick = game.tick
+
+    -- temporary 临时的热更新代码，需要删掉
+    if storage.run == 2 then
+        storage.statistics = {}
+    end
 
     -- 母星污染
     game.map_settings.pollution.enabled = true
@@ -759,20 +771,18 @@ end)
 
 -- 第一次运行场景时触发
 script.on_init(function()
-    storage.generator = game.create_random_generator()
-
     nauvis_init()
 
-    storage.run_vulcanus = 0
-    storage.run_fulgora = 0
-    storage.run_gleba = 0
-    storage.run_aquilo = 0
-    storage.run_edge = 0
-    storage.run_shattered_planet = 0
-
-    storage.run_epic_quality = 0
-    storage.run_legendary_quality = 0
-    storage.run_research_productivity = 0
+    storage.statistics = {}
+    -- storage.run_vulcanus = 0
+    -- storage.run_fulgora = 0
+    -- storage.run_gleba = 0
+    -- storage.run_aquilo = 0
+    -- storage.run_edge = 0
+    -- storage.run_shattered_planet = 0
+    -- storage.run_epic_quality = 0
+    -- storage.run_legendary_quality = 0
+    -- storage.run_research_productivity = 0
 
 
     storage.speed_penalty_enabled = false
@@ -948,29 +958,14 @@ script.on_event(defines.events.on_research_finished, function(event)
     elseif research_name == "mining-productivity-1" then
         storage.mining_current = 1
         print_tech_level()
-    elseif research_name == "epic-quality" then
-        -- 成就统计
-        if not storage.run_epic_quality_flag then
-            storage.run_epic_quality_flag = true
-            storage.run_epic_quality = storage.run_epic_quality + 1
-        end
-    elseif research_name == "legendary-quality" then
-        -- 成就统计
-        if not storage.run_legendary_quality_flag then
-            storage.run_legendary_quality_flag = true
-            storage.run_legendary_quality = storage.run_legendary_quality + 1
-        end
-    elseif research_name == "research-productivity" then
-        if (event.research.level == 2) then
-            -- 成就统计
-            if not storage.run_research_productivity_flag then
-                storage.run_research_productivity_flag = true
-                storage.run_research_productivity = storage.run_research_productivity + 1
-            end
+    end
+
+    if not storage.statistics_flags[research_name] then
+        storage.statistics_flags[research_name] = true
+        if not storage.statistics[research_name] then
+            storage.statistics[research_name] = 1
         else
-            game.print({
-                "wn.congrats-research-productivity", event.research.level - 1
-            })
+            storage.statistics[research_name] = storage.statistics[research_name] + 1
         end
     end
 end)
@@ -1134,56 +1129,70 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
     local location = platform.space_location
     if not location then return end
 
-    if not storage.run_vulcanus_flag and location.name == vulcanus then
-        storage.run_vulcanus_flag = true
-        storage.run_vulcanus = storage.run_vulcanus + 1
-        game.print({ "wn.congrats-first-visit", vulcanus })
+    local name = location.name
+
+    if not storage.statistics_flags[lname] then
+        storage.statistics_flags[name] = true
+        if not storage.statistics[name] then
+            storage.statistics[name] = 1
+        else
+            storage.statistics[name] = storage.statistics[name] + 1
+        end
+        game.print({ "wn.congrats-first-visit", name })
         statistics_text_update()
         redraw_player_gui()
     end
 
-    if not storage.run_fulgora_flag and location.name == fulgora then
-        storage.run_fulgora_flag = true
-        storage.run_fulgora = storage.run_fulgora + 1
-        game.print({ "wn.congrats-first-visit", fulgora })
-        statistics_text_update()
-        redraw_player_gui()
-    end
+    -- if not storage.run_vulcanus_flag and location.name == vulcanus then
+    --     storage.run_vulcanus_flag = true
+    --     storage.run_vulcanus = storage.run_vulcanus + 1
+    --     game.print({ "wn.congrats-first-visit", vulcanus })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+    -- end
 
-    if not storage.run_gleba_flag and location.name == gleba then
-        storage.run_gleba_flag = true
-        storage.run_gleba = storage.run_gleba + 1
-        game.print({ "wn.congrats-first-visit", gleba })
-        statistics_text_update()
-        redraw_player_gui()
-    end
+    -- if not storage.run_fulgora_flag and location.name == fulgora then
+    --     storage.run_fulgora_flag = true
+    --     storage.run_fulgora = storage.run_fulgora + 1
+    --     game.print({ "wn.congrats-first-visit", fulgora })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+    -- end
 
-    if not storage.run_aquilo_flag and location.name == aquilo then
-        storage.run_aquilo_flag = true
-        storage.run_aquilo = storage.run_aquilo + 1
-        game.print({ "wn.congrats-first-visit", aquilo })
-        statistics_text_update()
-        redraw_player_gui()
-    end
+    -- if not storage.run_gleba_flag and location.name == gleba then
+    --     storage.run_gleba_flag = true
+    --     storage.run_gleba = storage.run_gleba + 1
+    --     game.print({ "wn.congrats-first-visit", gleba })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+    -- end
 
-    if not storage.run_edge_flag and location.name == edge then
-        storage.run_edge_flag = true
-        storage.run_edge = storage.run_edge + 1
-        game.print({ "wn.congrats-first-visit", edge })
-        statistics_text_update()
-        redraw_player_gui()
-    end
+    -- if not storage.run_aquilo_flag and location.name == aquilo then
+    --     storage.run_aquilo_flag = true
+    --     storage.run_aquilo = storage.run_aquilo + 1
+    --     game.print({ "wn.congrats-first-visit", aquilo })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+    -- end
 
-    if not storage.run_shattered_planet_flag and location.name == shattered_planet then
-        storage.run_shattered_planet_flag = true
-        storage.run_shattered_planet = storage.run_shattered_planet + 1
-        game.print({ "wn.congrats-first-visit", shattered_planet })
-        statistics_text_update()
-        redraw_player_gui()
+    -- if not storage.run_edge_flag and location.name == edge then
+    --     storage.run_edge_flag = true
+    --     storage.run_edge = storage.run_edge + 1
+    --     game.print({ "wn.congrats-first-visit", edge })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+    -- end
 
-        -- 奖励发放
-        storage.reward_flag = true
-    end
+    -- if not storage.run_shattered_planet_flag and location.name == shattered_planet then
+    --     storage.run_shattered_planet_flag = true
+    --     storage.run_shattered_planet = storage.run_shattered_planet + 1
+    --     game.print({ "wn.congrats-first-visit", shattered_planet })
+    --     statistics_text_update()
+    --     redraw_player_gui()
+
+    --     -- 奖励发放
+    --     storage.reward_flag = true
+    -- end
 end)
 
 -- print tile data
