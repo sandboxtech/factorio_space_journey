@@ -1191,7 +1191,7 @@ function tile_checker(event)
     if event.name == defines.events.on_player_built_tile then
         local player = game.get_player(event.player_index)
         if player == nil or player.name == admin then return end
-
+    end
     local surface_index = event.surface_index
     if surface_index ~= 1 then return end -- nauvis
     local surface = game.surfaces[surface_index]
