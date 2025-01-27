@@ -346,6 +346,7 @@ local function nauvis_reset()
     -- nauvis.regenerate_entity(nil, { { -2, 0 }, { -2, 1 } })
 
     local nauvis = game.surfaces.nauvis
+    nauvis.peaceful_mode = storage.run <= 3
     local markets = nauvis.find_entities_filtered { area = { { -1, -7 }, { 0, -8 } }, type = "market" }
 
     if #markets ~= 1 then
