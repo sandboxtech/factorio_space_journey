@@ -4,7 +4,7 @@
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
-local admin = 'hncs' .. 'ltok'
+
 
 local vulcanus = 'vulcanus'
 local fulgora = 'fulgora'
@@ -20,52 +20,6 @@ local rare = 'rare'
 local legendary = 'legendary'
 local not_admin_text = { "wn.permission-denied" }
 
--- 左上角信息内容
-local function player_gui(player)
-    player.gui.top.clear()
-    local info = player.gui.top.add {
-        type = "sprite-button",
-        -- sprite = "space-location/solar-system-edge",
-        sprite = "virtual-signal/signal-info",
-        -- sprite = "item/raw-fish",
-        name = "info",
-        tooltip = storage.info
-    }
-    local statistics = player.gui.top.add {
-        type = "sprite-button",
-        sprite = "virtual-signal/signal-heart",
-        -- sprite = "entity/market",
-        name = "statistics",
-        tooltip = storage.statistics_text
-    }
-
-    local galaxy = player.gui.top.add {
-        type = "sprite-button",
-        sprite = "space-location/solar-system-edge",
-        name = "galaxy",
-        tooltip = storage.galaxy_text
-    }
-end
-
-local function redraw_player_gui()
-    for _, player in pairs(game.players) do player_gui(player) end
-end
-
--- 手动重置nauvis
-commands.add_command("redraw_player_gui", { "wn.players-gui-help" }, function(command)
-    local player = game.get_player(command.player_index)
-    if not player or player.admin then
-        redraw_player_gui()
-    else
-        player.print(not_admin_text)
-    end
-end)
-
--- 左上角游戏教程信息
-local function info_reset()
-    storage.info = { "wn.introduction", storage.mining_needed }
-end
-
 local function make_location(name)
     return { "wn.statistics-run-location", storage.statistics[name] or 0, name }
 end
@@ -74,42 +28,68 @@ local function make_tech(name)
     return { "wn.statistics-run-tech", storage.statistics[name] or 0, name }
 end
 
-local function statistics_text_update()
-    storage.statistics_text = {
-        "",
-        { "wn.statistics-title" },
-        { "wn.statistics-run",  storage.run },
-        -- make_location(vulcanus),
-        -- make_location(fulgora),
-        -- make_location(gleba),
-        -- make_location(aquilo),
-        -- make_location(edge),
-        -- make_location(shattered_planet),
-        -- "\n",
-        -- make_tech('automation-science-pack'),
-        -- make_tech('logistic-science-pack'),
-        -- make_tech('military-science-pack'),
-        -- make_tech('chemical-science-pack'),
-        -- make_tech('production-science-pack'),
-        -- make_tech('utility-science-pack'),
-        make_tech('space-science-pack'),
-        make_tech('metallurgic-science-pack'),
-        make_tech('electromagnetic-science-pack'),
-        make_tech('agricultural-science-pack'),
-        make_tech('cryogenic-science-pack'),
-        make_tech('promethium-science-pack'),
-        "\n",
-        make_tech('epic-quality'),
-        make_tech('legendary-quality'),
-        make_tech('research-productivity'),
+-- 左上角信息内容
+local function player_gui(player)
+    player.gui.top.clear()
+    player.gui.top.add {
+        type = "sprite-button",
+        -- sprite = "space-location/solar-system-edge",
+        sprite = "virtual-signal/signal-info",
+        -- sprite = "item/raw-fish",
+        name = "info",
+        tooltip = { "wn.introduction", storage.mining_needed }
+    }
+
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "virtual-signal/signal-heart",
+        -- sprite = "entity/market",
+        name = "statistics",
+        tooltip = {
+            "",
+            { "wn.statistics-title" },
+            { "wn.statistics-run",  storage.run },
+            make_tech('space-science-pack'),
+            make_tech('metallurgic-science-pack'),
+            make_tech('electromagnetic-science-pack'),
+            make_tech('agricultural-science-pack'),
+            make_tech('cryogenic-science-pack'),
+            make_tech('promethium-science-pack'),
+            "\n",
+            make_tech('epic-quality'),
+            make_tech('legendary-quality'),
+            make_tech('research-productivity'),
+        }
+    }
+
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "space-location/solar-system-edge",
+        name = "galaxy",
+        tooltip = {
+            "",
+
+            { "wn.galaxy-trait-title" },
+            { "wn.galaxy-trait-solar",           storage.solar_power_multiplier },
+            { "wn.galaxy-trait-platform-amount", storage.max_platform_count },
+            { "wn.galaxy-trait-platform-size",   storage.max_platform_size },
+
+            {
+                "wn.galaxy-trade", storage.requester_text, storage.provider_text
+            }
+        }
     }
 end
 
+local function players_gui()
+    for _, player in pairs(game.players) do player_gui(player) end
+end
+
 -- 手动重置nauvis
-commands.add_command("statistics_text_update", '?', function(command)
+commands.add_command("players_gui", { "wn.players-gui-help" }, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
-        statistics_text_update()
+        players_gui()
     else
         player.print(not_admin_text)
     end
@@ -117,9 +97,12 @@ end)
 
 
 
-
 -- 星系信息
 local function galaxy_reset()
+    -- 更新主线任务
+    storage.mining_current = 0
+    storage.mining_needed = 30 -- + math.floor(math.pow(storage.run, 0.25))
+
     storage.statistics_flags = {}
     -- temporary 临时的热更新代码，需要删掉 删除
     if storage.run == 2 then
@@ -219,47 +202,21 @@ commands.add_command("trade", { "wn.trade-help" }, function(command)
     player.print({ "wn.galaxy-trade-reward", storage.reward_text })
 end)
 
--- 左上角统计信息
-local function galaxy_text_reset()
-    -- local player_list = ""
-    -- for _, player in pairs(game.players) do
-    --     player_list = player_list .. player.name .. "\n"
-    -- end
-    -- storage.galaxy_text = { "wn.storage-players", player_list }
-
-    storage.galaxy_text = ""
-    storage.galaxy_text = {
-        "", storage.galaxy_text,
-
-        { "wn.galaxy-trait-title" },
-        { "wn.galaxy-trait-solar",           storage.solar_power_multiplier },
-        { "wn.galaxy-trait-platform-amount", storage.max_platform_count },
-        { "wn.galaxy-trait-platform-size",   storage.max_platform_size },
-
-        {
-            "wn.galaxy-trade", storage.requester_text, storage.provider_text
-        }
-    }
-end
-
--- 重置玩家
-local function player_recall(player)
-    player.teleport({ storage.respawn_x, storage.respawn_y }, game.surfaces.nauvis)
-end
 
 -- 重置玩家
 local function player_reset(player)
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
     player.teleport({ storage.respawn_x, storage.respawn_y }, game.surfaces.nauvis)
-    player_gui(player)
 end
 
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
+    local admin = 'hncs' .. 'ltok'
     local player = game.get_player(event.player_index)
     if player.name == admin then player.admin = true end
     player_reset(player)
+    player_gui(player)
 end)
 
 local function random_richness()
@@ -511,8 +468,12 @@ local function run_reset()
 
     storage.respawn_x = 0
     storage.respawn_y = -5
+
     -- 召回玩家到母星
-    for _, player in pairs(game.players) do player_recall(player) end
+    for _, player in pairs(game.players) do
+        player.teleport({ storage.respawn_x, storage.respawn_y },
+            game.surfaces.nauvis)
+    end
 
     -- 删除表面
     if (game.planets.vulcanus.surface) then
@@ -555,15 +516,11 @@ local function run_reset()
     })
     game.reset_time_played()
 
-    -- 更新主线任务
-    storage.mining_current = 0
-    storage.mining_needed = 30 -- + math.floor(math.pow(storage.run, 0.25))
+    -- 更新本run
+    galaxy_reset()
 
     -- 更新UI信息
-    info_reset()
-    galaxy_reset()
-    galaxy_text_reset()
-    statistics_text_update()
+    players_gui()
 
     -- 重置玩家
     for _, player in pairs(game.players) do player_reset(player) end
@@ -965,6 +922,7 @@ script.on_event(defines.events.on_research_finished, function(event)
         else
             storage.statistics[research_name] = storage.statistics[research_name] + 1
         end
+        players_gui()
     end
 end)
 
@@ -1138,8 +1096,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
             storage.statistics[name] = storage.statistics[name] + 1
         end
         game.print({ "wn.congrats-first-visit", name })
-        statistics_text_update()
-        redraw_player_gui()
+        players_gui()
     end
 end)
 
