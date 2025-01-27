@@ -78,15 +78,26 @@ local function statistics_text_update()
     storage.statistics_text = {
         "",
         { "wn.statistics-title" },
-        "\n",
         { "wn.statistics-run",  storage.run },
-        "\n",
-        make_location(vulcanus),
-        make_location(fulgora),
-        make_location(gleba),
-        make_location(aquilo),
-        make_location(edge),
-        make_location(shattered_planet),
+        -- make_location(vulcanus),
+        -- make_location(fulgora),
+        -- make_location(gleba),
+        -- make_location(aquilo),
+        -- make_location(edge),
+        -- make_location(shattered_planet),
+        -- "\n",
+        -- make_tech('automation-science-pack'),
+        -- make_tech('logistic-science-pack'),
+        -- make_tech('military-science-pack'),
+        -- make_tech('chemical-science-pack'),
+        -- make_tech('production-science-pack'),
+        -- make_tech('utility-science-pack'),
+        make_tech('space-science-pack'),
+        make_tech('metallurgic-science-pack'),
+        make_tech('electromagnetic-science-pack'),
+        make_tech('agricultural-science-pack'),
+        make_tech('cryogenic-science-pack'),
+        make_tech('promethium-science-pack'),
         "\n",
         make_tech('epic-quality'),
         make_tech('legendary-quality'),
@@ -97,15 +108,10 @@ end
 -- 星系信息
 local function galaxy_reset()
     storage.statistics_flags = {}
-    -- storage.run_vulcanus_flag = false
-    -- storage.run_fulgora_flag = false
-    -- storage.run_gleba_flag = false
-    -- storage.run_aquilo_flag = false
-    -- storage.run_edge_flag = false
-    -- storage.run_shattered_planet_flag = false
-    -- storage.run_research_productivity_flag = false
-    -- storage.run_epic_quality_flag = false
-    -- storage.run_legendary_quality_flag = false
+    -- temporary 临时的热更新代码，需要删掉 删除
+    if storage.run == 2 then
+        storage.statistics = {}
+    end
 
     -- 已经交易次数
     storage.trade_done = 0
@@ -117,7 +123,7 @@ local function galaxy_reset()
         'military-science-pack', 'chemical-science-pack',
         'production-science-pack', 'utility-science-pack', 'space-science-pack',
         'metallurgic-science-pack', 'electromagnetic-science-pack', 'spoilage',
-        'cryogenic-science-pack', 'promethium-science-pack'
+        'cryogenic-science-pack', 'promethium-science-pack',
     }
     local random_pack = random_packs[math.random(#random_packs)]
 
@@ -133,9 +139,11 @@ local function galaxy_reset()
     storage.provider_count = 1
     storage.provider_type = 'solar-panel-equipment'
     storage.provider_quality = normal
-    storage.provider_text = '[item=' .. storage.provider_type .. ',quality=' ..
-        storage.provider_quality .. '] x ' ..
-        storage.provider_count
+    storage.provider_text = '[item=' ..
+        storage.provider_type .. ',quality=' .. storage.provider_quality .. '] x ' .. storage.provider_count
+
+    storage.trade_done = 0
+    storage.trade_max = 100
 
     storage.reward_flag = false
     storage.reward_count = 1
@@ -242,7 +250,6 @@ script.on_event(defines.events.on_player_created, function(event)
 end)
 
 local function random_richness()
-    if not storage.richness then storage.richness = 1 end -- migration
     return (math.exp(math.random() * 1) - 0.99) * storage.richness
 end
 
@@ -343,8 +350,7 @@ script.on_event(defines.events.on_surface_deleted, function(event)
     end
 end)
 
-local market_x = -1
-local market_y = -8
+
 
 -- 重置母星
 local function nauvis_reset()
@@ -465,10 +471,6 @@ local function run_reset()
     storage.run = storage.run + 1
     storage.run_start_tick = game.tick
 
-    -- temporary 临时的热更新代码，需要删掉
-    if storage.run == 2 then
-        storage.statistics = {}
-    end
 
     -- 母星污染
     game.map_settings.pollution.enabled = true
@@ -585,16 +587,8 @@ end
 local function nauvis_init()
     local nauvis = game.surfaces.nauvis
 
-    -- local trees = nauvis.find_entities_filtered({
-    --     area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
-    --     type = 'tree'
-    -- })
-    -- if trees then
-    --     for i, tree in pairs(trees) do
-    --         tree.tree_gray_stage_index = 1
-    --         tree.tree_stage_index = 1
-    --     end
-    -- end
+    storage.market_x = -1
+    storage.market_y = -8
 
     storage.requester_x = 1
     storage.requester_y = -7
@@ -607,10 +601,6 @@ local function nauvis_init()
 
     storage.pad_x = 0
     storage.pad_y = 0
-
-    storage.reward_flag = false
-    storage.trade_done = 0
-    storage.trade_max = 100
 
     storage.richness = 1
     storage.radius_of = {}
@@ -674,7 +664,7 @@ local function nauvis_init()
     local market = nauvis.create_entity {
         name = 'market',
         quality = legendary,
-        position = { x = market_x, y = market_y },
+        position = { x = storage.market_x, y = storage.market_y },
         force = 'player'
     }
     protect(market)
@@ -960,6 +950,11 @@ script.on_event(defines.events.on_research_finished, function(event)
         print_tech_level()
     end
 
+    -- migration
+    if not storage.statistics_flags then
+        storage.statistics_flags = {}
+    end
+
     if not storage.statistics_flags[research_name] then
         storage.statistics_flags[research_name] = true
         if not storage.statistics[research_name] then
@@ -1017,7 +1012,8 @@ script.on_nth_tick(60 * 60, function()
     -- 动交易 60秒一次
 
     if storage.reward_flag then
-        local chest = only_storage_chest()
+        local chest = only_provider_chest()
+        --local chest = only_storage_chest()
         if not chest then
             game.print({ "wn.storage-chest-not-found" })
         else
@@ -1131,7 +1127,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
 
     local name = location.name
 
-    if not storage.statistics_flags[lname] then
+    if not storage.statistics_flags[name] then
         storage.statistics_flags[name] = true
         if not storage.statistics[name] then
             storage.statistics[name] = 1
@@ -1142,57 +1138,6 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         statistics_text_update()
         redraw_player_gui()
     end
-
-    -- if not storage.run_vulcanus_flag and location.name == vulcanus then
-    --     storage.run_vulcanus_flag = true
-    --     storage.run_vulcanus = storage.run_vulcanus + 1
-    --     game.print({ "wn.congrats-first-visit", vulcanus })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-    -- end
-
-    -- if not storage.run_fulgora_flag and location.name == fulgora then
-    --     storage.run_fulgora_flag = true
-    --     storage.run_fulgora = storage.run_fulgora + 1
-    --     game.print({ "wn.congrats-first-visit", fulgora })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-    -- end
-
-    -- if not storage.run_gleba_flag and location.name == gleba then
-    --     storage.run_gleba_flag = true
-    --     storage.run_gleba = storage.run_gleba + 1
-    --     game.print({ "wn.congrats-first-visit", gleba })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-    -- end
-
-    -- if not storage.run_aquilo_flag and location.name == aquilo then
-    --     storage.run_aquilo_flag = true
-    --     storage.run_aquilo = storage.run_aquilo + 1
-    --     game.print({ "wn.congrats-first-visit", aquilo })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-    -- end
-
-    -- if not storage.run_edge_flag and location.name == edge then
-    --     storage.run_edge_flag = true
-    --     storage.run_edge = storage.run_edge + 1
-    --     game.print({ "wn.congrats-first-visit", edge })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-    -- end
-
-    -- if not storage.run_shattered_planet_flag and location.name == shattered_planet then
-    --     storage.run_shattered_planet_flag = true
-    --     storage.run_shattered_planet = storage.run_shattered_planet + 1
-    --     game.print({ "wn.congrats-first-visit", shattered_planet })
-    --     statistics_text_update()
-    --     redraw_player_gui()
-
-    --     -- 奖励发放
-    --     storage.reward_flag = true
-    -- end
 end)
 
 -- print tile data
