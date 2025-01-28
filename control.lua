@@ -359,6 +359,23 @@ local function nauvis_reset()
             offer = { type = "give-item", item = item }
         }
     end
+    
+    market.add_market_item {
+        price = {  { name = 'coin', quality = legendary, count = 25 },  },
+        offer = { type = "give-item", item = 'modular-armor' }
+    }
+    market.add_market_item {
+        price = {  { name = 'coin', quality = legendary, count = 1 },  },
+        offer = { type = "give-item", item = 'solar-panel-equipment' }
+    }
+    market.add_market_item {
+        price = {  { name = 'coin', quality = legendary, count = 2 },  },
+        offer = { type = "give-item", item = 'battery-equipment' }
+    }
+    market.add_market_item {
+        price = {  { name = 'coin', quality = legendary, count = 4 },  },
+        offer = { type = "give-item", item = 'night-vision-equipment' }
+    }
 end
 
 -- 手动重置nauvis
