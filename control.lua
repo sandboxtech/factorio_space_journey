@@ -863,17 +863,6 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     if #tiles > 0 then surface.set_tiles(tiles) end
 end)
 
--- 飞船上限设置
-script.on_event(defines.events.on_space_platform_changed_state, function(event)
-    local platform = event.platform
-    if event.old_state == 0 then
-        local force = platform.force
-        if #force.platforms > storage.max_platform_count then
-            platform.destroy(1)
-            game.print({ "wn.too-many-platforms", storage.max_platform_count })
-        end
-    end
-end)
 
 function startswith(str, start) return string.sub(str, 1, #start) == start end
 
@@ -1082,6 +1071,17 @@ script.on_event(defines.events.on_built_entity, on_built_entity)
 script.on_event(defines.events.on_robot_built_entity, on_built_entity)
 
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
+    -- 平台上限
+    local platform = event.platform
+    if event.old_state == 0 then
+        local force = platform.force
+        if #force.platforms > storage.max_platform_count then
+            platform.destroy(1)
+            game.print({ "wn.too-many-platforms", storage.max_platform_count })
+        end
+    end
+
+    -- 首次到达
     local platform = event.platform
     local location = platform.space_location
     if not location then return end
