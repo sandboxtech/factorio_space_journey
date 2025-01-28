@@ -952,7 +952,7 @@ commands.add_command("warp", { "wn.warp-help" }, function(command)
                 "wn.player-warp-2", player_name, storage.last_warp_count
             })
         else
-            game.print({ "wn.player-warp-3", plaer_name })
+            game.print({ "wn.player-warp-3", player_name })
             run_reset()
         end
     end
@@ -1104,7 +1104,7 @@ end)
 function tile_checker(event)
     if event.name == defines.events.on_player_built_tile then
         local player = game.get_player(event.player_index)
-        if player == nil or player.name == admin then return end
+        if player == nil then return end
     end
     local surface_index = event.surface_index
     if surface_index ~= 1 then return end -- nauvis
