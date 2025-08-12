@@ -359,21 +359,21 @@ local function nauvis_reset()
             offer = { type = "give-item", item = item }
         }
     end
-    
+
     market.add_market_item {
-        price = {  { name = 'coin', quality = legendary, count = 25 },  },
+        price = { { name = 'coin', quality = legendary, count = 25 }, },
         offer = { type = "give-item", item = 'modular-armor' }
     }
     market.add_market_item {
-        price = {  { name = 'coin', quality = legendary, count = 1 },  },
+        price = { { name = 'coin', quality = legendary, count = 1 }, },
         offer = { type = "give-item", item = 'solar-panel-equipment' }
     }
     market.add_market_item {
-        price = {  { name = 'coin', quality = legendary, count = 2 },  },
+        price = { { name = 'coin', quality = legendary, count = 2 }, },
         offer = { type = "give-item", item = 'battery-equipment' }
     }
     market.add_market_item {
-        price = {  { name = 'coin', quality = legendary, count = 4 },  },
+        price = { { name = 'coin', quality = legendary, count = 4 }, },
         offer = { type = "give-item", item = 'night-vision-equipment' }
     }
 end
@@ -598,7 +598,6 @@ local function nauvis_init()
     storage.radius = math.max(128, storage.radius)
     game.print(storage.radius)
 
-    -- [item=cargo-landing-pad]
     local pad = nauvis.create_entity {
         name = 'cargo-landing-pad',
         quality = legendary,
@@ -612,7 +611,7 @@ local function nauvis_init()
     do
         for x = 1, 2
         do
-            local bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = 'legendary', position =
+            local bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = legendary, position =
             { x = -6 + 4 * x, y = 2 + 4 * y }, force = 'player' }
             protect(bay)
         end
@@ -621,6 +620,22 @@ local function nauvis_init()
     -- local silo = game.surfaces.nauvis.create_entity { name = 'rocket-silo', quality = 'legendary', position =
     -- { x = 0, y = -16 }, force = 'player' }
     -- protect(silo)
+
+    -- 太阳能
+    for y = 1, 1
+    do
+        for x = 1, 2
+        do
+            local panel = game.surfaces.nauvis.create_entity { name = 'solar-panel', quality = normal, position =
+            { x = -10.5 + 7 * x, y = -4.5 - 3 * y }, force = 'player' }
+            protect(panel)
+        end
+    end
+
+    -- 激光
+    local laser = game.surfaces.nauvis.create_entity { name = 'laser-turret', quality = normal, position =
+    { x = 0, y = -2 }, force = 'player' }
+    protect(laser)
 
     -- 地板
     local tiles = {}
@@ -1045,8 +1060,8 @@ script.on_nth_tick(60 * 60, function()
     end
 end)
 
-script.on_nth_tick(60 * 60 * 20, function()
-    -- 奖金发放 20分钟一次
+script.on_nth_tick(60 * 60 * 60, function()
+    -- 奖金发放 60分钟一次
     local salary = storage.run;
     if salary <= 0 then salary = 1 end
     for _, player in pairs(game.connected_players) do -- Table iteration.
