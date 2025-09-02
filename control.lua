@@ -148,8 +148,8 @@ local function galaxy_reset()
     -- 刷新星系参数
     storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) *
         math.random(1, 4) * 0.1
-    storage.max_platform_count = math.random(1, 6)
-    storage.max_platform_size = math.random(2, 5) * math.random(2, 5) * 32
+    storage.max_platform_count = 1 -- math.random(1, 6)
+    storage.max_platform_size = 256 -- math.random(2, 5) * math.random(2, 5) * 32
 
     -- 不知道这行有没有用
     game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
