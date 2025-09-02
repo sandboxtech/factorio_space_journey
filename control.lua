@@ -104,10 +104,6 @@ local function galaxy_reset()
     storage.mining_needed = 30 -- + math.floor(math.pow(storage.run, 0.25))
 
     storage.statistics_flags = {}
-    -- temporary 临时的热更新代码，需要删掉 删除
-    if storage.run == 2 then
-        storage.statistics = {}
-    end
 
     -- 已经交易次数
     storage.trade_done = 0
@@ -991,7 +987,7 @@ commands.add_command("warp", { "wn.warp-help" }, function(command)
 end)
 
 script.on_nth_tick(60 * 60, function()
-    -- 动交易 60秒一次
+    -- 自动交易 60秒一次
 
     if storage.reward_flag then
         local chest = only_provider_chest()
