@@ -37,19 +37,18 @@ local function player_gui(player)
         name = "info",
         tooltip = {"wn.introduction", storage.mining_needed}
     }
-
     player.gui.top.add {
         type = "sprite-button",
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run},
-                   make_tech('promethium-science-pack'), "\n", make_tech('epic-quality'),
-                   make_tech('legendary-quality'), "\n", make_tech('steel-plate-productivity'),
-                   make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
-                   make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
-                   make_tech('rocket-part-productivity'), "\n", make_tech('asteroid-productivity'),
-                   make_tech('scrap-recycling-productivity'), make_tech('research-productivity')}
+        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run}, make_tech('cryogenic-science-pack'),
+                   make_tech('promethium-science-pack'), make_tech('epic-quality'), make_tech('legendary-quality'),
+                   "\n", make_tech('steel-plate-productivity'), make_tech('plastic-bar-productivity'),
+                   make_tech('rocket-fuel-productivity'), make_tech('processing-unit-productivity'),
+                   make_tech('low-density-structure-productivity'), make_tech('rocket-part-productivity'), "\n",
+                   make_tech('asteroid-productivity'), make_tech('scrap-recycling-productivity'),
+                   make_tech('research-productivity')}
     }
 
     player.gui.top.add {
@@ -83,30 +82,24 @@ end)
 local random_asteroids = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6, 7, 7}
 local random_techprice = {0.1, 0.2, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3,
                           3, 3, 5, 5, 5, 10, 10, 20, 50, 100}
-local random_spoiltime = {0.01, 0.02, 0.05, 0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20,
-                          30, 50, 100}
+local random_spoiltime = {0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20, 30, 50, 100}
 
 -- 星系信息
 local function galaxy_reset()
     -- 更新主线任务
     storage.mining_current = 0
-    storage.mining_needed = math.max(10, storage.run)
+    storage.mining_needed = math.min(100, math.max(10, storage.run))
 
     game.map_settings.asteroids.spawning_rate = random_asteroids[math.random(1, #random_asteroids)]
     game.difficulty_settings.technology_price_multiplier = random_techprice[math.random(1, #random_techprice)]
-    game.difficulty_settings.spoil_time_modifier = 0.1 * random_spoiltime[math.random(1, #random_spoiltime)]
+    game.difficulty_settings.spoil_time_modifier = random_spoiltime[math.random(1, #random_spoiltime)]
 
     storage.arrived_edge = false
-
-    storage.statistics_flags = {}
 
     -- 刷新星系参数
     -- storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
     storage.max_platform_count = 1 -- math.random(1, 6)
     storage.max_platform_size = math.max(100 + storage.run, storage.run * 2) -- math.random(2, 5) * math.random(2, 5) * 32
-
-    -- 不知道这行有没有用
-    -- game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
 
     local force = game.forces.player
 
@@ -338,9 +331,6 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         r = math.min(2048, r)
     end
 
-    if not storage.radius_of then
-        storage.radius_of = {}
-    end -- migration
     storage.radius_of[surface.name] = r
 
     local platform = surface.platform
@@ -506,7 +496,6 @@ local function run_reset()
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 
     -- 重置科技
-    -- tech_reset()
 
     -- -- 删除平台
     -- for _, platform in pairs(force.platforms) do
@@ -533,7 +522,7 @@ end
 -- 第一次运行场景时触发
 script.on_init(function()
     game.speed = 1
-    storage.run = 0
+    storage.run = -1
 
     storage.respawn_x = 0
     storage.respawn_y = -5
@@ -543,7 +532,6 @@ script.on_init(function()
     storage.speed_penalty_enabled = false
     storage.speed_penalty_day = 5
 
-    storage.run = -1
     storage.mining_current = 0
     storage.mining_needed = 10
 
@@ -657,6 +645,9 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
     -- 圆形地图
     local r = storage.radius_of[surface.name]
+    if not r then
+        r = storage.radius
+    end
 
     if left_top.x * left_top.x + left_top.y * left_top.y < r * r / 2 then
         return
@@ -689,15 +680,15 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     end
 end)
 
-function startswith(str, start)
+local function startswith(str, start)
     return string.sub(str, 1, #start) == start
 end
 
-function endswith(str, ending)
+local function endswith(str, ending)
     return ending == "" or string.sub(str, -#ending) == ending
 end
 
-local function print_tech_level()
+local function print_mining_productivity_level()
     game.print({"wn.warp-process", storage.mining_current, storage.mining_needed})
 end
 
@@ -705,44 +696,53 @@ local function can_reset()
     return storage.mining_current >= storage.mining_needed and storage.arrived_edge
 end
 
-script.on_event(defines.events.on_research_finished, function(event)
-    if event.by_script then
-        return
+local function try_reset()
+    if can_reset() then
+        run_reset()
+        return true
+    else
+        return false
     end
+end
+
+script.on_event(defines.events.on_research_finished, function(event)
 
     local research_name = event.research.name
     if research_name == "mining-productivity-3" then
         storage.mining_current = event.research.level - 1
         if (can_reset()) then
             -- run_reset()
-            print_tech_level()
+            if (not event.by_script) then
+                print_mining_productivity_level()
+            end
 
             game.print({"wn.warp-command-hint"})
         else
-            print_tech_level()
+            if (not event.by_script) then
+                print_mining_productivity_level()
+            end
+
         end
     elseif research_name == "mining-productivity-2" then
         storage.mining_current = 2
-        print_tech_level()
+        if (not event.by_script) then
+            print_mining_productivity_level()
+        end
+
     elseif research_name == "mining-productivity-1" then
         storage.mining_current = 1
-        print_tech_level()
-    end
-
-    -- migration
-    if not storage.statistics_flags then
-        storage.statistics_flags = {}
-    end
-
-    if not storage.statistics_flags[research_name] then
-        storage.statistics_flags[research_name] = true
-        if not storage.statistics[research_name] then
-            storage.statistics[research_name] = 1
-        else
-            storage.statistics[research_name] = storage.statistics[research_name] + 1
+        if (not event.by_script) then
+            print_mining_productivity_level()
         end
-        players_gui()
+
     end
+
+    if not storage.statistics[research_name] then
+        storage.statistics[research_name] = 1
+    else
+        storage.statistics[research_name] = storage.statistics[research_name] + 1
+    end
+    players_gui()
 end)
 
 -- 手动重置
@@ -841,16 +841,13 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
 
     local name = location.name
 
-    if not storage.statistics_flags[name] then
-        storage.statistics_flags[name] = true
-        if not storage.statistics[name] then
-            storage.statistics[name] = 1
-        else
-            storage.statistics[name] = storage.statistics[name] + 1
-        end
-        game.print({"wn.congrats-first-visit", name})
-        players_gui()
+    if not storage.statistics[name] then
+        storage.statistics[name] = 1
+    else
+        storage.statistics[name] = storage.statistics[name] + 1
     end
+    game.print({"wn.congrats-first-visit", name})
+    players_gui()
 
     -- 前往下一个地点
     if name == edge then
