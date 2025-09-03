@@ -4,8 +4,6 @@
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
-
-
 local vulcanus = 'vulcanus'
 local fulgora = 'fulgora'
 local gleba = 'gleba'
@@ -18,14 +16,14 @@ local normal = 'normal'
 local rare = 'rare'
 -- local epic = 'epic'
 local legendary = 'legendary'
-local not_admin_text = { "wn.permission-denied" }
+local not_admin_text = {"wn.permission-denied"}
 
 local function make_location(name)
-    return { "wn.statistics-run-location", storage.statistics[name] or 0, name }
+    return {"wn.statistics-run-location", storage.statistics[name] or 0, name}
 end
 
 local function make_tech(name)
-    return { "wn.statistics-run-tech", storage.statistics[name] or 0, name }
+    return {"wn.statistics-run-tech", storage.statistics[name] or 0, name}
 end
 
 -- 左上角信息内容
@@ -37,7 +35,7 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-info",
         -- sprite = "item/raw-fish",
         name = "info",
-        tooltip = { "wn.introduction", storage.mining_needed }
+        tooltip = {"wn.introduction", storage.mining_needed}
     }
 
     player.gui.top.add {
@@ -45,21 +43,11 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {
-            "",
-            { "wn.statistics-title" },
-            { "wn.statistics-run",  storage.run },
-            make_tech('space-science-pack'),
-            make_tech('metallurgic-science-pack'),
-            make_tech('electromagnetic-science-pack'),
-            make_tech('agricultural-science-pack'),
-            make_tech('cryogenic-science-pack'),
-            make_tech('promethium-science-pack'),
-            "\n",
-            make_tech('epic-quality'),
-            make_tech('legendary-quality'),
-            make_tech('research-productivity'),
-        }
+        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run}, make_tech('space-science-pack'),
+                   make_tech('metallurgic-science-pack'), make_tech('electromagnetic-science-pack'),
+                   make_tech('agricultural-science-pack'), make_tech('cryogenic-science-pack'),
+                   make_tech('promethium-science-pack'), "\n", make_tech('epic-quality'),
+                   make_tech('legendary-quality'), make_tech('research-productivity')}
     }
 
     -- player.gui.top.add {
@@ -82,11 +70,13 @@ local function player_gui(player)
 end
 
 local function players_gui()
-    for _, player in pairs(game.players) do player_gui(player) end
+    for _, player in pairs(game.players) do
+        player_gui(player)
+    end
 end
 
 -- 手动重置players_gui
-commands.add_command("players_gui", { "wn.players-gui-help" }, function(command)
+commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         players_gui()
@@ -94,8 +84,6 @@ commands.add_command("players_gui", { "wn.players-gui-help" }, function(command)
         player.print(not_admin_text)
     end
 end)
-
-
 
 -- 星系信息
 local function galaxy_reset()
@@ -105,49 +93,8 @@ local function galaxy_reset()
 
     storage.statistics_flags = {}
 
-    -- -- 已经交易次数
-    -- storage.trade_done = 0
-    -- -- 最大交易次数
-    -- storage.trade_max = 100
-    -- -- 交易内容，随机科技包
-    -- local random_packs = {
-    --     'automation-science-pack', 'logistic-science-pack',
-    --     'military-science-pack', 'chemical-science-pack',
-    --     'production-science-pack', 'utility-science-pack', 'space-science-pack',
-    --     'metallurgic-science-pack', 'electromagnetic-science-pack', 'spoilage',
-    --     'cryogenic-science-pack', 'promethium-science-pack',
-    -- }
-    -- local random_pack = random_packs[math.random(#random_packs)]
-
-    -- -- 需求1000个传说科技包
-    -- storage.requester_count = 1000
-    -- storage.requester_type = random_pack
-    -- storage.requester_quality = legendary
-    -- storage.requester_text =
-    --     '[item=' .. storage.requester_type .. ',quality=' ..
-    --     storage.requester_quality .. '] x ' .. storage.requester_count
-
-    -- -- 提供1个硬币
-    -- storage.provider_count = 1
-    -- storage.provider_type = 'solar-panel-equipment'
-    -- storage.provider_quality = normal
-    -- storage.provider_text = '[item=' ..
-    --     storage.provider_type .. ',quality=' .. storage.provider_quality .. '] x ' .. storage.provider_count
-
-    -- storage.trade_done = 0
-    -- storage.trade_max = 100
-
-    -- storage.reward_flag = false
-    -- storage.reward_count = 1
-    -- storage.reward_type = 'modular-armor'
-    -- storage.reward_quality = normal
-    -- storage.reward_text = '[item=' .. storage.reward_type .. ',quality=' ..
-    --     storage.reward_quality .. '] x ' ..
-    --     storage.reward_count
-
     -- 刷新星系参数
-    storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) *
-        math.random(1, 4) * 0.1
+    storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
     storage.max_platform_count = 1 -- math.random(1, 6)
     storage.max_platform_size = 256 -- math.random(2, 5) * math.random(2, 5) * 32
 
@@ -156,24 +103,18 @@ local function galaxy_reset()
 
     local force = game.forces.player
 
-    local productivity_techs = {
-        'rocket-fuel-productivity', 'low-density-structure-productivity',
-        'processing-unit-productivity', 'rocket-part-productivity'
-    }
+    local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
+                                'processing-unit-productivity', 'rocket-part-productivity'}
 
-    local productivity_techs_2 = {
-        'steel-plate-productivity', 'plastic-bar-productivity',
-        'asteroid-productivity', 'scrap-recycling-productivity'
-    }
+    local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
+                                  'scrap-recycling-productivity'}
 
-    for _, techs in pairs({ productivity_techs, productivity_techs_2 }) do
+    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
         for _, tech in pairs(techs) do
             if math.random(10) == 1 then
                 force.technologies[tech].researched = true
                 force.technologies[tech].level = 100
-                storage.galaxy_text = {
-                    "", storage.galaxy_text, { "wn.galaxy-trait-technology", tech }
-                }
+                storage.galaxy_text = {"", storage.galaxy_text, {"wn.galaxy-trait-technology", tech}}
                 break
             end
         end
@@ -198,31 +139,258 @@ end
 --     player.print({ "wn.galaxy-trade-reward", storage.reward_text })
 -- end)
 
-
 -- 重置玩家
 local function player_reset(player)
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    player.teleport({ storage.respawn_x, storage.respawn_y }, game.surfaces.nauvis)
+    player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 end
 
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
     local admin = 'hncs' .. 'ltok'
     local player = game.get_player(event.player_index)
-    if player.name == admin then player.admin = true end
+    if player.name == admin then
+        player.admin = true
+    end
     player_reset(player)
     player_gui(player)
 end)
+
+-- 删除表面
+script.on_event(defines.events.on_surface_deleted, function(event)
+    local surface = game.get_surface(event.surface_index)
+    if surface then
+        game.print({"wn.farewell-surface", {"space-location-name." .. surface.name}})
+    end
+end)
+
+local function protect(entity)
+    entity.minable = false
+    entity.destructible = false
+end
+
+local function create_entity(name, x, y)
+    local panel = game.surfaces.nauvis.create_entity {
+        name = name,
+        quality = normal,
+        position = {
+            x = x,
+            y = y
+        },
+        force = 'player'
+    }
+    protect(panel)
+end
+
+-- 重置母星
+local function nauvis_reset()
+
+    local force = game.forces.player
+    for i, tech in pairs(force.technologies) do
+        force.technologies[tech.name].researched = false
+    end
+
+    local nauvis = game.surfaces.nauvis
+
+    -- local pad = nauvis.create_entity {
+    --     name = 'cargo-landing-pad',
+    --     quality = legendary,
+    --     position = {
+    --         x = storage.pad_x,
+    --         y = storage.pad_y
+    --     },
+    --     force = 'player'
+    -- }
+    -- protect(pad)
+
+    -- for y = 1, 4 do
+    --     for x = 1, 2 do
+    --         local bay = game.surfaces.nauvis.create_entity {
+    --             name = 'cargo-bay',
+    --             quality = legendary,
+    --             position = {
+    --                 x = -6 + 4 * x,
+    --                 y = 2 + 4 * y
+    --             },
+    --             force = 'player'
+    --         }
+    --         protect(bay)
+    --     end
+    -- end
+
+    -- local silo = game.surfaces.nauvis.create_entity {
+    --     name = 'rocket-silo',
+    --     quality = 'legendary',
+    --     position = {
+    --         x = 0,
+    --         y = -16
+    --     },
+    --     force = 'player'
+    -- }
+    -- protect(silo)
+
+    -- 太阳能
+    create_entity('solar-panel', -4.5, -14.5)
+    create_entity('solar-panel', 4.5, -14.5)
+    create_entity('solar-panel', -1.5, -14.5)
+    create_entity('solar-panel', 1.5, -14.5)
+
+    create_entity('laser-turret', 3, -10)
+    create_entity('laser-turret', -3, -10)
+    create_entity('substation', 5, -12)
+    create_entity('substation', -5, -12)
+    create_entity('accumulator', 3, -12)
+    create_entity('accumulator', -3, -12)
+
+    -- 市场
+    local market = nauvis.create_entity {
+        name = 'market',
+        quality = legendary,
+        position = {
+            x = storage.market_x,
+            y = storage.market_y
+        },
+        force = 'player'
+    }
+    protect(market)
+
+    local requester_chest = nauvis.create_entity({
+        name = 'requester-chest',
+        quality = legendary,
+        position = {
+            x = storage.requester_x,
+            y = storage.requester_y
+        },
+        force = 'player'
+    })
+    protect(requester_chest)
+
+    local storage_chest = nauvis.create_entity({
+        name = 'storage-chest',
+        quality = legendary,
+        position = {
+            x = storage.storage_x,
+            y = storage.storage_y
+        },
+        force = 'player'
+    })
+    protect(storage_chest)
+
+    local provider_chest = nauvis.create_entity({
+        name = 'passive-provider-chest',
+        quality = legendary,
+        position = {
+            x = storage.provider_x,
+            y = storage.provider_y
+        },
+        force = 'player'
+    })
+    protect(provider_chest)
+
+    local nauvis = game.surfaces.nauvis
+    nauvis.peaceful_mode = storage.run <= 3
+    local markets = nauvis.find_entities_filtered {
+        area = {{storage.market_x, storage.market_y}, {storage.market_x, storage.market_y}},
+        type = "market"
+    }
+
+    if #markets ~= 1 then
+        game.print({"wn.market-not-found"})
+        return
+    end
+
+    local market = markets[1]
+    market.clear_market_items()
+
+    local items_1 = {'wood'}
+
+    for _, item in pairs(items_1) do
+        market.add_market_item {
+            price = {{
+                name = 'coin',
+                count = 1
+            }},
+            offer = {
+                type = "give-item",
+                item = item
+            }
+        }
+    end
+
+    local items_2 = {'raw-fish', 'biter-egg', 'uranium-ore'}
+
+    for _, item in pairs(items_2) do
+        market.add_market_item {
+            price = {{
+                name = 'coin',
+                quality = rare,
+                count = 1
+            }},
+            offer = {
+                type = "give-item",
+                item = item
+            }
+        }
+    end
+
+    market.add_market_item {
+        price = {{
+            name = 'coin',
+            quality = normal,
+            count = 25
+        }},
+        offer = {
+            type = "give-item",
+            item = 'modular-armor'
+        }
+    }
+    market.add_market_item {
+        price = {{
+            name = 'coin',
+            quality = normal,
+            count = 1
+        }},
+        offer = {
+            type = "give-item",
+            item = 'solar-panel-equipment'
+        }
+    }
+    market.add_market_item {
+        price = {{
+            name = 'coin',
+            quality = normal,
+            count = 2
+        }},
+        offer = {
+            type = "give-item",
+            item = 'battery-equipment'
+        }
+    }
+    market.add_market_item {
+        price = {{
+            name = 'coin',
+            quality = normal,
+            count = 4
+        }},
+        offer = {
+            type = "give-item",
+            item = 'night-vision-equipment'
+        }
+    }
+end
 
 local function random_richness()
     return (math.exp(math.random() * 1) - 0.99) * storage.richness
 end
 
 -- 创建随机表面
-script.on_event(defines.events.on_surface_created, function(event)
+script.on_event(defines.events.on_surface_cleared, function(event)
     local surface = game.get_surface(event.surface_index)
-    if not surface then return end
+    if not surface then
+        return
+    end
+
     surface.solar_power_multiplier = storage.solar_power_multiplier
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
@@ -231,14 +399,14 @@ script.on_event(defines.events.on_surface_created, function(event)
     if surface.name == 'nauvis' then
         r = storage.radius
     else
-        r = storage.radius *
-            (0.5 + math.random() + 2 * math.random() * math.random())
+        r = storage.radius * (0.5 + math.random() + 2 * math.random() * math.random())
         r = math.max(256, r)
         r = math.min(1024, r)
     end
 
-
-    if not storage.radius_of then storage.radius_of = {} end -- migration
+    if not storage.radius_of then
+        storage.radius_of = {}
+    end -- migration
     storage.radius_of[surface.name] = r
 
     local platform = surface.platform
@@ -259,16 +427,16 @@ script.on_event(defines.events.on_surface_created, function(event)
     if surface == game.surfaces.vulcanus then
         local richness = random_richness()
 
-        for _, res in pairs({
-            'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'
-        }) do mgs.autoplace_controls[res].richness = richness end
+        for _, res in pairs({'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'}) do
+            mgs.autoplace_controls[res].richness = richness
+        end
 
         local volcanism = 'vulcanus_volcanism'
         mgs.autoplace_controls[volcanism].richness = random_richness()
     end
 
     if surface == game.surfaces.fulgora then
-        for _, res in pairs({ 'scrap' }) do
+        for _, res in pairs({'scrap'}) do
             local richness = random_richness()
             mgs.autoplace_controls[res].richness = richness
         end
@@ -298,283 +466,165 @@ script.on_event(defines.events.on_surface_created, function(event)
 
     if surface == game.surfaces.aquilo then
         local richness = random_richness()
-        for _, res in pairs({
-            'lithium_brine', 'fluorine_vent', 'aquilo_crude_oil'
-        }) do mgs.autoplace_controls[res].richness = richness end
+        for _, res in pairs({'lithium_brine', 'fluorine_vent', 'aquilo_crude_oil'}) do
+            mgs.autoplace_controls[res].richness = richness
+        end
     end
 
     surface.map_gen_settings = mgs
-end)
 
--- 删除表面
-script.on_event(defines.events.on_surface_deleted, function(event)
-    local surface = game.get_surface(event.surface_index)
-    if surface then
-        game.print({
-            "wn.farewell-surface", { "space-location-name." .. surface.name }
-        })
-    end
-end)
-
-
-local function protect(entity)
-    entity.minable = false
-    entity.destructible = false
-end
-
--- 重置母星
-local function nauvis_reset()
-
-    local force = game.forces.player
-    for i, tech in pairs(force.technologies)
-    do
-        force.technologies[tech.name].researched = false
-    end
-
-    local nauvis = game.surfaces.nauvis
-
-    local pad = nauvis.create_entity {
-        name = 'cargo-landing-pad',
-        quality = legendary,
-        position = { x = storage.pad_x, y = storage.pad_y },
-        force = 'player'
-    }
-    protect(pad)
-
-
-    for y = 1, 4
-    do
-        for x = 1, 2
-        do
-            local bay = game.surfaces.nauvis.create_entity { name = 'cargo-bay', quality = legendary, position =
-            { x = -6 + 4 * x, y = 2 + 4 * y }, force = 'player' }
-            protect(bay)
-        end
-    end
-
-    local silo = game.surfaces.nauvis.create_entity { name = 'rocket-silo', quality = 'legendary', position =
-    { x = 0, y = -16 }, force = 'player' }
-    protect(silo)
-
-    -- 太阳能
-    for y = 1, 1
-    do
-        for x = 1, 2
-        do
-            local panel = game.surfaces.nauvis.create_entity { name = 'solar-panel', quality = normal, position =
-            { x = -10.5 + 7 * x, y = -4.5 - 3 * y }, force = 'player' }
-            protect(panel)
-        end
-    end
-
-    -- 激光
-    local laser = game.surfaces.nauvis.create_entity { name = 'laser-turret', quality = normal, position =
-    { x = 0, y = -2 }, force = 'player' }
-    protect(laser)
-
-    -- 地板
-    local tiles = {}
-    for x = -8, 7, 1 do
-        for y = -12, 23, 1 do
-            table.insert(tiles, { name = 'refined-concrete', position = { x, y } })
-        end
-    end
-    if #tiles > 0 then nauvis.set_tiles(tiles) end
-    for _, tile in pairs(tiles) do
-        nauvis.set_double_hidden_tile(tile.position, nil)
-        nauvis.set_hidden_tile(tile.position, nil)
-    end
-    tiles = {}
-    for x = -7, 6, 1 do
-        for y = -11, 22, 1 do
-            table.insert(tiles, { name = 'foundation', position = { x, y } })
-        end
-    end
-    if #tiles > 0 then nauvis.set_tiles(tiles) end
-    for _, tile in pairs(tiles) do
-        nauvis.set_double_hidden_tile(tile.position, nil)
-        nauvis.set_hidden_tile(tile.position, nil)
-    end
-
-
-    -- 市场
-    local market = nauvis.create_entity {
-        name = 'market',
-        quality = legendary,
-        position = { x = storage.market_x, y = storage.market_y },
-        force = 'player'
-    }
-    protect(market)
-
-
-    local requester_chest = nauvis.create_entity({
-        name = 'requester-chest',
-        quality = legendary,
-        position = { x = storage.requester_x, y = storage.requester_y },
-        force = 'player'
-    })
-    protect(requester_chest)
-
-    local storage_chest = nauvis.create_entity({
-        name = 'storage-chest',
-        quality = legendary,
-        position = { x = storage.storage_x, y = storage.storage_y },
-        force = 'player'
-    })
-    protect(storage_chest)
-
-    local provider_chest = nauvis.create_entity({
-        name = 'passive-provider-chest',
-        quality = legendary,
-        position = { x = storage.provider_x, y = storage.provider_y },
-        force = 'player'
-    })
-    protect(provider_chest)
-
-    local nauvis = game.surfaces.nauvis
-    nauvis.peaceful_mode = storage.run <= 3
-    local markets = nauvis.find_entities_filtered { area = { { -1, -7 }, { 0, -8 } }, type = "market" }
-
-    if #markets ~= 1 then
-        game.print({ "wn.market-not-found" })
+    if surface.index ~= 1 then
         return
     end
+    local radius = 1056
+    game.forces.player.chart(game.surfaces.nauvis, {{
+        x = -radius,
+        y = -radius
+    }, {
+        x = radius,
+        y = radius
+    }})
 
-    local market = markets[1]
-    market.clear_market_items()
-
-    local items_1 = { 'wood', }
-
-    for _, item in pairs(items_1) do
-        market.add_market_item {
-            price = { { name = 'coin', count = 1 } },
-            offer = { type = "give-item", item = item }
-        }
-    end
-
-    local items_2 = { 'raw-fish', 'biter-egg', 'uranium-ore', }
-
-    for _, item in pairs(items_2) do
-        market.add_market_item {
-            price = {
-                { name = 'coin', quality = rare, count = 1 },
-            },
-            offer = { type = "give-item", item = item }
-        }
-    end
-
-    market.add_market_item {
-        price = { { name = 'coin', quality = normal, count = 25 }, },
-        offer = { type = "give-item", item = 'modular-armor' }
-    }
-    market.add_market_item {
-        price = { { name = 'coin', quality = normal, count = 1 }, },
-        offer = { type = "give-item", item = 'solar-panel-equipment' }
-    }
-    market.add_market_item {
-        price = { { name = 'coin', quality = normal, count = 2 }, },
-        offer = { type = "give-item", item = 'battery-equipment' }
-    }
-    market.add_market_item {
-        price = { { name = 'coin', quality = normal, count = 4 }, },
-        offer = { type = "give-item", item = 'night-vision-equipment' }
-    }
-end
-
--- 手动重置nauvis
-commands.add_command("nauvis_reset", { "wn.nauvis-reset-help" }, function(command)
-    local player = game.get_player(command.player_index)
-    if not player or player.admin then
-        nauvis_reset()
-    else
-        player.print(not_admin_text)
-    end
+    nauvis_reset()
 end)
 
--- local mid_techs = {
---     'agricultural-science-pack', 'electromagnetic-science-pack',
---     'metallurgic-science-pack'
--- }
--- local late_techs = {'cryogenic-science-pack', 'promethium-science-pack'}
+-- local function tech_reset()
+--     local force = game.forces.player
 
-local function tech_reset()
-    local force = game.forces.player
+--     local researched_techs = {'biter-egg-handling'}
 
-    local researched_techs = {
-        'biter-egg-handling',
-    }
+--     local enabled_techs = {}
 
-    local enabled_techs = {
+--     local disabled_techs = {'cliff-explosives', 'atomic-bomb', 'belt-immunity-equipment', 'night-vision-equipment',
+--                             'discharge-defense-equipment', 'toolbelt', 'heavy-armor', 'modular-armor',
+--                             'solar-panel-equipment', 'personal-roboport-equipment', 'battery-equipment',
+--                             'energy-shield-equipment', 'power-armor', 'power-armor-mk2', 'mech-armor',
+--                             'fission-reactor-equipment', 'fusion-reactor-equipment', 'battery-mk2-equipment',
+--                             'battery-mk3-equipment', 'personal-roboport-mk2-equipment', 'exoskeleton-equipment',
+--                             'toolbelt-equipment', 'personal-laser-defense-equipment', 'energy-shield-mk2-equipment',
+--                             'spidertron'}
 
-    }
+--     local hidden_techs = {}
 
-    local disabled_techs = {
-        'cliff-explosives', 'atomic-bomb',
-        'belt-immunity-equipment', 'night-vision-equipment',
-        'discharge-defense-equipment', 'toolbelt',
-        'heavy-armor',
-        'modular-armor', 'solar-panel-equipment',
-        'personal-roboport-equipment',
-        'battery-equipment', 'energy-shield-equipment',
-        'power-armor', 'power-armor-mk2',
-        'mech-armor', 'fission-reactor-equipment', 'fusion-reactor-equipment',
+--     for _, tech_name in pairs(researched_techs) do
+--         force.technologies[tech_name].researched = true
+--     end
 
-        'battery-mk2-equipment', 'battery-mk3-equipment',
-        'personal-roboport-mk2-equipment', 'exoskeleton-equipment',
-        'toolbelt-equipment', 'personal-laser-defense-equipment',
-        'energy-shield-mk2-equipment', 'spidertron'
-    }
+--     for _, tech_name in pairs(enabled_techs) do
+--         force.technologies[tech_name].enabled = true
+--         force.technologies[tech_name].visible_when_disabled = true
+--     end
 
-    local hidden_techs = {
+--     for _, tech_name in pairs(disabled_techs) do
+--         force.technologies[tech_name].enabled = false
+--         force.technologies[tech_name].visible_when_disabled = true
+--     end
 
-    }
+--     for _, tech_name in pairs(hidden_techs) do
+--         force.technologies[tech_name].enabled = false
+--         force.technologies[tech_name].visible_when_disabled = false
+--     end
+-- end
 
-    for _, tech_name in pairs(researched_techs) do
-        force.technologies[tech_name].researched = true
+local change_seed = function()
+    local rng = math.random(1111, 4294967295)
+    local mgs = game.surfaces["nauvis"].map_gen_settings
+    mgs.seed = rng
+    game.surfaces["nauvis"].map_gen_settings = mgs
+    if game.surfaces["vulcanus"] ~= nil then
+        local mgs = game.surfaces["vulcanus"].map_gen_settings
+        mgs.seed = rng
+        game.surfaces["vulcanus"].map_gen_settings = mgs
     end
-
-    for _, tech_name in pairs(enabled_techs) do
-        force.technologies[tech_name].enabled = true
-        force.technologies[tech_name].visible_when_disabled = true
+    if game.surfaces["gleba"] ~= nil then
+        local mgs = game.surfaces["gleba"].map_gen_settings
+        mgs.seed = rng
+        game.surfaces["gleba"].map_gen_settings = mgs
     end
-
-    for _, tech_name in pairs(disabled_techs) do
-        force.technologies[tech_name].enabled = false
-        force.technologies[tech_name].visible_when_disabled = true
+    if game.surfaces["fulgora"] ~= nil then
+        local mgs = game.surfaces["fulgora"].map_gen_settings
+        mgs.seed = rng
+        game.surfaces["fulgora"].map_gen_settings = mgs
     end
-
-    for _, tech_name in pairs(hidden_techs) do
-        force.technologies[tech_name].enabled = false
-        force.technologies[tech_name].visible_when_disabled = false
+    if game.surfaces["aquilo"] ~= nil then
+        local mgs = game.surfaces["aquilo"].map_gen_settings
+        mgs.seed = rng
+        game.surfaces["aquilo"].map_gen_settings = mgs
     end
 end
 
+-- todo:
+-- 随机星系，星系特殊介绍文本
+-- 开局科技
+-- 星球特色参数、飞船大小、飞船数量
 
-local change_seed = function()
-	local rng = math.random(1111, 4294967295)
-	local mgs = game.surfaces["nauvis"].map_gen_settings
-	mgs.seed = rng
-	game.surfaces["nauvis"].map_gen_settings = mgs
-	if game.surfaces["vulcanus"] ~= nil then
-	local mgs = game.surfaces["vulcanus"].map_gen_settings
-	mgs.seed = rng
-	game.surfaces["vulcanus"].map_gen_settings = mgs
-	end
-	if game.surfaces["gleba"] ~= nil then
-	local mgs = game.surfaces["gleba"].map_gen_settings
-	mgs.seed = rng
-	game.surfaces["gleba"].map_gen_settings = mgs
-	end
-	if game.surfaces["fulgora"] ~= nil then
-	local mgs = game.surfaces["fulgora"].map_gen_settings
-	mgs.seed = rng
-	game.surfaces["fulgora"].map_gen_settings = mgs
-	end
-	if game.surfaces["aquilo"] ~= nil then
-	local mgs = game.surfaces["aquilo"].map_gen_settings
-	mgs.seed = rng
-	game.surfaces["aquilo"].map_gen_settings = mgs
-	end
+-- 跃迁
+local function run_reset()
+
+    storage.run = storage.run + 1
+    storage.run_start_tick = game.tick
+
+    -- 召回玩家到母星
+    for _, player in pairs(game.players) do
+        player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+    end
+
+    change_seed()
+    -- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
+    game.surfaces["nauvis"].clear(true)
+    if game.surfaces["vulcanus"] ~= nil then
+        game.surfaces["vulcanus"].clear(true)
+    end
+    if game.surfaces["gleba"] ~= nil then
+        game.surfaces["gleba"].clear(true)
+    end
+    if game.surfaces["fulgora"] ~= nil then
+        game.surfaces["fulgora"].clear(true)
+    end
+    if game.surfaces["aquilo"] ~= nil then
+        game.surfaces["aquilo"].clear(true)
+    end
+    -- We delete space platforms
+    -- for _, surface in pairs(game.surfaces) do
+    -- 	if surface.platform then
+    -- 		game.delete_surface(surface)
+    -- 	end
+    -- end
+
+    -- nauvis_reset()
+
+    -- 重置玩家势力
+    local enemy = game.forces.enemy
+    enemy.reset_evolution()
+
+    local force = game.forces.player
+    force.reset()
+    force.friendly_fire = true
+    force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+
+    -- 重置科技
+    -- tech_reset()
+
+    -- -- 删除平台
+    -- for _, platform in pairs(force.platforms) do
+    --     game.print({"wn.farewell-platform", platform.name})
+    --     platform.destroy(1)
+    -- end
+
+    game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
+                math.floor((game.tick % min_to_tick) / min_to_tick)})
+    game.reset_time_played()
+
+    -- 更新本run
+    galaxy_reset()
+
+    -- 更新UI信息
+    players_gui()
+
+    -- 重置玩家
+    for _, player in pairs(game.players) do
+        player_reset(player)
+    end
 end
 
 -- 第一次运行场景时触发
@@ -597,6 +647,18 @@ script.on_init(function()
     storage.last_warp_tick = 0
     storage.last_warp_count = 0
 
+    storage.market_x = -1
+    storage.market_y = -12
+
+    storage.requester_x = 1
+    storage.requester_y = -11
+
+    storage.storage_x = 1
+    storage.storage_y = -12
+
+    storage.provider_x = 1
+    storage.provider_y = -13
+
     storage.pad_x = 0
     storage.pad_y = 0
 
@@ -604,7 +666,7 @@ script.on_init(function()
     storage.radius_of = {}
     storage.radius = 1024
 
-        -- 母星污染
+    -- 母星污染
     game.map_settings.pollution.enabled = true
 
     game.map_settings.pollution.min_to_diffuse = 1500
@@ -615,170 +677,118 @@ script.on_init(function()
 
     game.map_settings.pollution.ageing = 0.1
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
+
+    run_reset()
 end)
 
--- todo:
--- 随机星系，星系特殊介绍文本
--- 开局科技
--- 星球特色参数、飞船大小、飞船数量
+-- local half = 0.5
 
--- 跃迁
-local function run_reset()
+-- local function only_requester_chest()
+--     return game.surfaces.nauvis.find_entity({
+--         name = 'requester-chest',
+--         quality = legendary
+--     }, {storage.requester_x + half, storage.requester_y + half})
+-- end
 
+-- local function only_storage_chest()
+--     return game.surfaces.nauvis.find_entity({
+--         name = 'storage-chest',
+--         quality = legendary
+--     }, {storage.storage_x + half, storage.storage_y + half})
+-- end
 
-    storage.run = storage.run + 1
-    storage.run_start_tick = game.tick
+-- local function only_provider_chest()
+--     return game.surfaces.nauvis.find_entity({
+--         name = 'passive-provider-chest',
+--         quality = legendary
+--     }, {storage.provider_x + half, storage.provider_y + half})
+-- end
 
-    local radius = 1024
-    game.forces.player.chart(game.surfaces.nauvis, {{x = -radius, y = -radius}, {x = radius, y = radius}})
+-- commands.add_command("tree_min", '?', function(command)
+--     local trees = game.surfaces.nauvis.find_entities_filtered({
+--         area = {
+--             left_top = {
+--                 x = -640,
+--                 y = -640
+--             },
+--             right_bottom = {
+--                 x = 640,
+--                 y = 640
+--             }
+--         },
+--         type = 'tree'
+--     })
+--     if trees then
+--         for i, tree in pairs(trees) do
+--             if tree.tree_stage_index_max > 0 then
+--                 tree.tree_stage_index = tree.tree_stage_index_max
+--             end
+--             if tree.tree_color_index_max > 0 then
+--                 tree.tree_color_index = tree.tree_color_index_max
+--             end
+--             tree.tree_gray_stage_index = 15
+--         end
+--     end
+-- end)
 
-    -- 召回玩家到母星
-    for _, player in pairs(game.players) do
-        player.teleport({ storage.respawn_x, storage.respawn_y },
-            game.surfaces.nauvis)
-    end
+-- commands.add_command("tree_max", '?', function(command)
+--     local trees = game.surfaces.nauvis.find_entities_filtered({
+--         area = {
+--             left_top = {
+--                 x = -640,
+--                 y = -640
+--             },
+--             right_bottom = {
+--                 x = 640,
+--                 y = 640
+--             }
+--         },
+--         type = 'tree'
+--     })
+--     if trees then
+--         for i, tree in pairs(trees) do
+--             if tree.tree_stage_index_max > 0 then
+--                 tree.tree_stage_index = 1
+--             end
+--             if tree.tree_color_index_max > 0 then
+--                 tree.tree_color_index = 1
+--             end
+--             tree.tree_gray_stage_index = 0
+--         end
+--     end
+-- end)
 
-	change_seed()
-	-- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
-	game.surfaces["nauvis"].clear(true)
-	if game.surfaces["vulcanus"] ~= nil then
-	game.surfaces["vulcanus"].clear(true)
-	end
-	if game.surfaces["gleba"] ~= nil then
-	game.surfaces["gleba"].clear(true)
-	end
-	if game.surfaces["fulgora"] ~= nil then
-	game.surfaces["fulgora"].clear(true)
-	end
-	if game.surfaces["aquilo"] ~= nil then
-	game.surfaces["aquilo"].clear(true)
-	end
-	-- We delete space platforms
-	-- for _, surface in pairs(game.surfaces) do
-	-- 	if surface.platform then
-	-- 		game.delete_surface(surface)
-	-- 	end
-	-- end
+-- commands.add_command("tree_random", '?', function(command)
+--     local trees = game.surfaces.nauvis.find_entities_filtered({
+--         area = {
+--             left_top = {
+--                 x = -640,
+--                 y = -640
+--             },
+--             right_bottom = {
+--                 x = 640,
+--                 y = 640
+--             }
+--         },
+--         type = 'tree'
+--     })
+--     if trees then
+--         for i, tree in pairs(trees) do
+--             if tree.tree_stage_index_max > 0 then
+--                 tree.tree_stage_index = math.random(1, tree.tree_stage_index_max)
+--             end
+--             if tree.tree_color_index_max > 0 then
+--                 tree.tree_color_index = math.random(1, tree.tree_color_index_max)
+--             end
+--             tree.tree_gray_stage_index = math.random(1, 15)
+--         end
+--     end
+-- end)
 
-    nauvis_reset()
-
-    -- 重置玩家势力
-    local enemy = game.forces.enemy
-    enemy.reset_evolution()
-
-    local force = game.forces.player
-    force.reset()
-    force.friendly_fire = true
-    force.set_spawn_position({ storage.respawn_x, storage.respawn_y },
-        game.surfaces.nauvis)
-
-    -- 重置科技
-    tech_reset()
-
-    -- -- 删除平台
-    -- for _, platform in pairs(force.platforms) do
-    --     game.print({ "wn.farewell-platform", platform.name })
-    --     platform.destroy(1)
-    -- end
-
-    game.print({
-        "wn.warp-success-time", math.floor(game.tick / hour_to_tick),
-        math.floor((game.tick % min_to_tick) / min_to_tick)
-    })
-    game.reset_time_played()
-
-    -- 更新本run
-    galaxy_reset()
-
-    -- 更新UI信息
-    players_gui()
-
-    -- 重置玩家
-    for _, player in pairs(game.players) do player_reset(player) end
-end
-
-
-
-local half = 0.5
-
-local function only_requester_chest()
-    return game.surfaces.nauvis.find_entity({
-        name = 'requester-chest',
-        quality = legendary
-    }, { storage.requester_x + half, storage.requester_y + half })
-end
-
-local function only_storage_chest()
-    return game.surfaces.nauvis.find_entity({
-        name = 'storage-chest',
-        quality = legendary
-    }, { storage.storage_x + half, storage.storage_y + half })
-end
-
-local function only_provider_chest()
-    return game.surfaces.nauvis.find_entity({
-        name = 'passive-provider-chest',
-        quality = legendary
-    }, { storage.provider_x + half, storage.provider_y + half })
-end
-
-commands.add_command("tree_min", '?', function(command)
-    local trees = game.surfaces.nauvis.find_entities_filtered({
-        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
-        type = 'tree'
-    })
-    if trees then
-        for i, tree in pairs(trees) do
-            if tree.tree_stage_index_max > 0 then
-                tree.tree_stage_index = tree.tree_stage_index_max
-            end
-            if tree.tree_color_index_max > 0 then
-                tree.tree_color_index = tree.tree_color_index_max
-            end
-            tree.tree_gray_stage_index = 15
-        end
+script.on_event(defines.events.on_gui_click, function(event)
+    if event.element.name == "suicide" then
     end
 end)
-
-commands.add_command("tree_max", '?', function(command)
-    local trees = game.surfaces.nauvis.find_entities_filtered({
-        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
-        type = 'tree'
-    })
-    if trees then
-        for i, tree in pairs(trees) do
-            if tree.tree_stage_index_max > 0 then
-                tree.tree_stage_index = 1
-            end
-            if tree.tree_color_index_max > 0 then
-                tree.tree_color_index = 1
-            end
-            tree.tree_gray_stage_index = 0
-        end
-    end
-end)
-
-commands.add_command("tree_random", '?', function(command)
-    local trees = game.surfaces.nauvis.find_entities_filtered({
-        area = { left_top = { x = -640, y = -640 }, right_bottom = { x = 640, y = 640 } },
-        type = 'tree'
-    })
-    if trees then
-        for i, tree in pairs(trees) do
-            if tree.tree_stage_index_max > 0 then
-                tree.tree_stage_index = math.random(1, tree.tree_stage_index_max)
-            end
-            if tree.tree_color_index_max > 0 then
-                tree.tree_color_index = math.random(1, tree.tree_color_index_max)
-            end
-            tree.tree_gray_stage_index = math.random(1, 15)
-        end
-    end
-end)
-
-
-script.on_event(defines.events.on_gui_click,
-    function(event) if event.element.name == "suicide" then end end)
 
 -- 玩家进入游戏
 script.on_event(defines.events.on_player_joined_game, function(event)
@@ -788,35 +798,31 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     if player.online_time > 0 then
         local last_delta = math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
         local total_time = math.max(0, math.floor(player.online_time / hour_to_tick))
-        welcome = {
-            "wn.welcome-player", player.name,
-            total_time,
-            last_delta
-        }
+        welcome = {"wn.welcome-player", player.name, total_time, last_delta}
     else
-        welcome = { "wn.welcome-new-player", player.name }
+        welcome = {"wn.welcome-new-player", player.name}
     end
     game.print(welcome)
 end)
 
-script.on_event(defines.events.on_pre_surface_cleared, function(event) 
-	if event.surface_index == 1 then
-	-- We need to kill all players _before_ the surface is cleared, so that
-	-- their inventory, and crafting queue, end up on the old surface
-	for _, pl in pairs(game.players) do
-		if pl.connected and pl.character ~= nil then
-			-- We call die() here because otherwise we will spawn a duplicate
-			-- character, who will carry over into the new surface
-			pl.character.die()
-		end
-		-- Setting [ticks_to_respawn] to 1 seems to consistantly kill offline
-		-- players. Calling this for online players will cause them instead be
-		-- respawned the next tick, skipping the 10 respawn second timer.
-		pl.ticks_to_respawn = 1
-		--  Need to teleport otherwise offline players will force generate many chunks on new surface at their position on old surface when they rejoin.
-		pl.teleport({0,0}, "nauvis")
-	end
-	end
+script.on_event(defines.events.on_pre_surface_cleared, function(event)
+    if event.surface_index == 1 then
+        -- We need to kill all players _before_ the surface is cleared, so that
+        -- their inventory, and crafting queue, end up on the old surface
+        for _, pl in pairs(game.players) do
+            if pl.connected and pl.character ~= nil then
+                -- We call die() here because otherwise we will spawn a duplicate
+                -- character, who will carry over into the new surface
+                pl.character.die()
+            end
+            -- Setting [ticks_to_respawn] to 1 seems to consistantly kill offline
+            -- players. Calling this for online players will cause them instead be
+            -- respawned the next tick, skipping the 10 respawn second timer.
+            pl.ticks_to_respawn = 1
+            --  Need to teleport otherwise offline players will force generate many chunks on new surface at their position on old surface when they rejoin.
+            pl.teleport({0, 0}, "nauvis")
+        end
+    end
 end)
 
 -- 星球圆形地块生成
@@ -825,8 +831,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     -- local chunk_position = event.position
     local left_top = event.area.left_top
 
-    if surface == game.surfaces.nauvis
-    then
+    if surface == game.surfaces.nauvis then
         -- -- 无敌虫巢和树和石头
         -- local entities_list = { 'unit-spawner', 'tree', 'simple-entity', }
 
@@ -845,22 +850,31 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         -- end
 
         -- 超富矿
-        local ores = game.surfaces[1].find_entities_filtered { area = event.area,
-            name = { "iron-ore", "copper-ore", "stone", "coal", "uranium-ore" } }
+        local ores = game.surfaces[1].find_entities_filtered {
+            area = event.area,
+            name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
+        }
 
         if ores then
             for i, entity in pairs(ores) do
-                entity.amount = eneity.initial_amount * 100 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
+                entity.amount = entity.amount * 100 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
             end
         end
     end
 
     -- 圆形地图
-    if not storage.radius_of then storage.radius_of = {} end -- migration
+    if not storage.radius_of then
+        storage.radius_of = {}
+    end -- migration
     local r = storage.radius_of[surface.name]
-    if not r then                                            -- migration
+    if not r then -- migration
         r = storage.radius
     end
+
+    if left_top.x * left_top.x + left_top.y * left_top.y < r * r / 2 then
+        return
+    end
+
     local chunk_size = 32
 
     local tiles = {}
@@ -870,31 +884,38 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         for y = -1, chunk_size, 1 do
             local px = left_top.x + x
             local py = left_top.y + y
+
             if (px - cx) * (px - cx) + (py - cy) * (py - cy) > r * r then
-                local p = { x = px, y = py }
-                table.insert(tiles, { name = 'empty-space', position = p })
+                local p = {
+                    x = px,
+                    y = py
+                }
+                table.insert(tiles, {
+                    name = 'empty-space',
+                    position = p
+                })
             end
         end
     end
-    if #tiles > 0 then surface.set_tiles(tiles) end
+    if #tiles > 0 then
+        surface.set_tiles(tiles)
+    end
 end)
 
-
-function startswith(str, start) return string.sub(str, 1, #start) == start end
+function startswith(str, start)
+    return string.sub(str, 1, #start) == start
+end
 
 function endswith(str, ending)
-    return ending == "" or string.sub(str, - #ending) == ending
+    return ending == "" or string.sub(str, -#ending) == ending
 end
 
 local function print_tech_level()
-    game.print({
-        "wn.warp-process", storage.mining_current, storage.mining_needed
-    })
+    game.print({"wn.warp-process", storage.mining_current, storage.mining_needed})
 end
 
 local function can_reset()
-    return
-        storage.mining_current >= storage.mining_needed
+    return storage.mining_current >= storage.mining_needed
 end
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -903,7 +924,7 @@ script.on_event(defines.events.on_research_finished, function(event)
         storage.mining_current = event.research.level - 1
         if (can_reset()) then
             -- run_reset()
-            game.print({ "wn.warp-command-hint" })
+            game.print({"wn.warp-command-hint"})
         else
             print_tech_level()
         end
@@ -932,7 +953,7 @@ script.on_event(defines.events.on_research_finished, function(event)
 end)
 
 -- 手动重置
-commands.add_command("run_reset", { "wn.run-reset-help" }, function(command)
+commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         run_reset()
@@ -942,7 +963,7 @@ commands.add_command("run_reset", { "wn.run-reset-help" }, function(command)
 end)
 
 -- 手动跃迁
-commands.add_command("warp", { "wn.warp-help" }, function(command)
+commands.add_command("warp", {"wn.warp-help"}, function(command)
     local player_name = "<server>"
     local player = nil
     if command.player_index then
@@ -951,24 +972,24 @@ commands.add_command("warp", { "wn.warp-help" }, function(command)
     end
 
     if player and player.online_time < 60 * 60 * 60 * 6 then
-        player.print({ "wn.warp-permission-denied" })
+        player.print({"wn.warp-permission-denied"})
     end
 
     local count = 3
     if not can_reset() then
-        if player then player.print({ "wn.warp-condition-false" }) end
+        if player then
+            player.print({"wn.warp-condition-false"})
+        end
     else
         storage.last_warp = game.tick
         if game.tick - storage.last_warp > 60 * 10 then
             storage.last_warp_count = 0
-            game.print({ "wn.player-warp-1", player_name })
+            game.print({"wn.player-warp-1", player_name})
         elseif storage.last_warp_count < count then
             storage.last_warp_count = storage.last_warp_count + 1
-            game.print({
-                "wn.player-warp-2", player_name, storage.last_warp_count
-            })
+            game.print({"wn.player-warp-2", player_name, storage.last_warp_count})
         else
-            game.print({ "wn.player-warp-3", player_name })
+            game.print({"wn.player-warp-3", player_name})
             run_reset()
         end
     end
@@ -1047,36 +1068,48 @@ end)
 script.on_nth_tick(60 * 60 * 60, function()
     -- 奖金发放 60分钟一次
     local salary = storage.run;
-    if salary <= 0 then salary = 1 end
-    for _, player in pairs(game.connected_players) do -- Table iteration.
-        player.insert { name = "coin", count = salary }
+    if salary <= 0 then
+        salary = 1
     end
-    game.print({ "wn.give-salary", salary })
+    for _, player in pairs(game.connected_players) do -- Table iteration.
+        player.insert {
+            name = "coin",
+            count = salary
+        }
+    end
+    game.print({"wn.give-salary", salary})
 end)
 
 script.on_nth_tick(60 * 60 * 180, function()
     -- 修改游戏运行速度
-    if not storage.speed_penalty_enabled then return end
+    if not storage.speed_penalty_enabled then
+        return
+    end
 
     local time_played = game.tick - storage.run_start_tick
 
-    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day /
-        (1 + time_played)
+    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
     game_speed = math.min(game_speed, 1)
     game_speed = math.max(game_speed, 0.125)
 
     if game.speed < 1 then
         game.speed = game_speed
-        game.print({ "wn.game-speed-penalty", game_speed })
+        game.print({"wn.game-speed-penalty", game_speed})
     end
 end)
 
 -- 禁止母星货舱
 function on_built_entity(event)
     local entity = event.entity
-    if not entity then return end
-    if not entity.valid then return end
-    if entity.surface.index ~= 1 then return end -- nauvis
+    if not entity then
+        return
+    end
+    if not entity.valid then
+        return
+    end
+    if entity.surface.index ~= 1 then
+        return
+    end -- nauvis
     if entity.type == 'cargo-bay' then
         entity.die()
         return
@@ -1093,14 +1126,16 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         local force = platform.force
         if #force.platforms > storage.max_platform_count then
             platform.destroy(1)
-            game.print({ "wn.too-many-platforms", storage.max_platform_count })
+            game.print({"wn.too-many-platforms", storage.max_platform_count})
         end
     end
 
     -- 首次到达
     local platform = event.platform
     local location = platform.space_location
-    if not location then return end
+    if not location then
+        return
+    end
 
     local name = location.name
 
@@ -1111,39 +1146,51 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         else
             storage.statistics[name] = storage.statistics[name] + 1
         end
-        game.print({ "wn.congrats-first-visit", name })
+        game.print({"wn.congrats-first-visit", name})
         players_gui()
+    end
+
+    -- 前往下一个地点
+    if name == edge and can_reset() then
+        run_reset()
     end
 end)
 
--- print tile data
-function tile_checker(event)
-    if event.name == defines.events.on_player_built_tile then
-        local player = game.get_player(event.player_index)
-        if player == nil then return end
-    end
-    local surface_index = event.surface_index
-    if surface_index ~= 1 then return end -- nauvis
-    local surface = game.surfaces[surface_index]
+-- -- print tile data
+-- function tile_checker(event)
+--     if event.name == defines.events.on_player_built_tile then
+--         local player = game.get_player(event.player_index)
+--         if player == nil then
+--             return
+--         end
+--     end
+--     local surface_index = event.surface_index
+--     if surface_index ~= 1 then
+--         return
+--     end -- nauvis
+--     local surface = game.surfaces[surface_index]
 
-    for _, tile_data in pairs(event.tiles) do
-        local position = tile_data.position
-        local hidden_tile = surface.get_hidden_tile(position)
-        local double_hidden_tile = surface.get_double_hidden_tile(position)
+--     for _, tile_data in pairs(event.tiles) do
+--         local position = tile_data.position
+--         local hidden_tile = surface.get_hidden_tile(position)
+--         local double_hidden_tile = surface.get_double_hidden_tile(position)
 
-        -- if hidden_tile == 'empty-space' then
-        --     surface.set_tiles({ { name = 'empty-space', position = position } })
-        --     -- surface.set_hidden_tile(position, 'empty-space')
-        -- end
+--         -- if hidden_tile == 'empty-space' then
+--         --     surface.set_tiles({ { name = 'empty-space', position = position } })
+--         --     -- surface.set_hidden_tile(position, 'empty-space')
+--         -- end
 
-        if hidden_tile ~= nil then
-            surface.set_tiles({ { name = hidden_tile, position = position } })
-        end
-        if double_hidden_tile ~= nil then
-            surface.set_hidden_tile(position, double_hidden_tile)
-        end
-    end
-end
+--         if hidden_tile ~= nil then
+--             surface.set_tiles({{
+--                 name = hidden_tile,
+--                 position = position
+--             }})
+--         end
+--         if double_hidden_tile ~= nil then
+--             surface.set_hidden_tile(position, double_hidden_tile)
+--         end
+--     end
+-- end
 
-script.on_event(defines.events.on_player_built_tile, tile_checker)
-script.on_event(defines.events.on_robot_built_tile, tile_checker)
+-- script.on_event(defines.events.on_player_built_tile, tile_checker)
+-- script.on_event(defines.events.on_robot_built_tile, tile_checker)
