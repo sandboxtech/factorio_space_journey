@@ -56,9 +56,11 @@ local function player_gui(player)
         type = "sprite-button",
         sprite = "space-location/solar-system-edge",
         name = "galaxy",
-        tooltip = {"", {"wn.galaxy-trait-title"}, {"wn.galaxy-trait-solar", storage.solar_power_multiplier},
-                   {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
-                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}}
+        tooltip = {"", {"wn.galaxy-trait-title"}, {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
+                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, "\n",
+                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
+                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
+                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier}}
     }
 end
 
@@ -78,22 +80,33 @@ commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     end
 end)
 
+local random_asteroids = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6, 7, 7}
+local random_techprice = {0.1, 0.2, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3,
+                          3, 3, 5, 5, 5, 10, 10, 20, 50, 100}
+local random_spoiltime = {0.01, 0.02, 0.05, 0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20,
+                          30, 50, 100}
+
 -- 星系信息
 local function galaxy_reset()
     -- 更新主线任务
     storage.mining_current = 0
     storage.mining_needed = math.max(10, storage.run)
+
+    game.map_settings.asteroids.spawning_rate = random_asteroids[math.random(1, #random_asteroids)]
+    game.difficulty_settings.technology_price_multiplier = random_techprice[math.random(1, #random_techprice)]
+    game.difficulty_settings.spoil_time_modifier = 0.1 * random_spoiltime[math.random(1, #random_spoiltime)]
+
     storage.arrived_edge = false
 
     storage.statistics_flags = {}
 
     -- 刷新星系参数
-    storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
+    -- storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
     storage.max_platform_count = 1 -- math.random(1, 6)
     storage.max_platform_size = math.max(100 + storage.run, storage.run * 2) -- math.random(2, 5) * math.random(2, 5) * 32
 
     -- 不知道这行有没有用
-    game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
+    -- game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
 
     local force = game.forces.player
 
@@ -108,7 +121,6 @@ local function galaxy_reset()
             if math.random(10) == 1 then
                 force.technologies[tech].researched = true
                 force.technologies[tech].level = 100
-                storage.galaxy_text = {"", storage.galaxy_text, {"wn.galaxy-trait-technology", tech}}
                 break
             end
         end
@@ -189,67 +201,30 @@ local function nauvis_reset()
     create_entity('solar-panel', 4.5, -14.5)
     create_entity('solar-panel', -1.5, -14.5)
     create_entity('solar-panel', 1.5, -14.5)
+    create_entity('solar-panel', -4.5, -17.5)
+    create_entity('solar-panel', 4.5, -17.5)
+    create_entity('solar-panel', -1.5, -17.5)
+    create_entity('solar-panel', 1.5, -17.5)
 
-    create_entity('laser-turret', 3, -10)
-    create_entity('laser-turret', -3, -10)
-    create_entity('substation', 5, -12)
-    create_entity('substation', -5, -12)
-    create_entity('accumulator', 3, -12)
-    create_entity('accumulator', -3, -12)
+    create_entity('laser-turret', 4, -10)
+    create_entity('laser-turret', -4, -10)
+    create_entity('substation', 6, -12)
+    create_entity('substation', -6, -12)
+    create_entity('accumulator', 4, -12)
+    create_entity('accumulator', -4, -12)
 
     -- 市场
-    local market = nauvis.create_entity {
-        name = 'market',
-        quality = legendary,
-        position = {
-            x = storage.market_x,
-            y = storage.market_y
-        },
-        force = 'player'
-    }
-    protect(market)
-
-    local requester_chest = nauvis.create_entity({
-        name = 'requester-chest',
-        quality = legendary,
-        position = {
-            x = storage.requester_x,
-            y = storage.requester_y
-        },
-        force = 'player'
-    })
-    protect(requester_chest)
-
-    local storage_chest = nauvis.create_entity({
-        name = 'storage-chest',
-        quality = legendary,
-        position = {
-            x = storage.storage_x,
-            y = storage.storage_y
-        },
-        force = 'player'
-    })
-    protect(storage_chest)
-
-    local provider_chest = nauvis.create_entity({
-        name = 'passive-provider-chest',
-        quality = legendary,
-        position = {
-            x = storage.provider_x,
-            y = storage.provider_y
-        },
-        force = 'player'
-    })
-    protect(provider_chest)
+    create_entity('market', storage.market_x, storage.market_y)
+    create_entity('market', storage.market_x + 3, storage.market_y)
 
     local nauvis = game.surfaces.nauvis
     nauvis.peaceful_mode = storage.run <= 3
     local markets = nauvis.find_entities_filtered {
-        area = {{storage.market_x, storage.market_y}, {storage.market_x, storage.market_y}},
+        area = {{-32, -32}, {32, 32}},
         type = "market"
     }
 
-    if #markets ~= 1 then
+    if #markets ~= 2 then
         game.print({"wn.market-not-found"})
         return
     end
@@ -287,6 +262,8 @@ local function nauvis_reset()
             }
         }
     end
+
+    local market = markets[2]
 
     market.add_market_item {
         price = {{
@@ -335,7 +312,11 @@ local function nauvis_reset()
 end
 
 local function random_richness()
-    return (math.exp(math.random() * 1) - 0.99) * storage.richness
+    return (0.1 + 5 * math.random() * math.random() * math.random()) * storage.richness
+end
+
+local function random_radius()
+    return (1 + 8 * math.random() * math.random() * math.random()) * storage.radius
 end
 
 -- 创建随机表面
@@ -345,7 +326,6 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         return
     end
 
-    surface.solar_power_multiplier = storage.solar_power_multiplier
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
 
@@ -410,11 +390,13 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         mgs.autoplace_controls[enemy].frequency = math.random() * 6
 
         local water = 'gleba_water'
-        local richness = math.exp(math.random() * 4) * 0.125 - 0.99
+        local richness = random_richness()
+
         mgs.autoplace_controls[water].richness = richness
 
         local plants = 'gleba_plants'
-        local richness = math.exp(math.random() * 4) * 0.125 - 0.99
+        local richness = random_richness()
+
         mgs.autoplace_controls[plants].richness = richness
     end
 
@@ -430,7 +412,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     if surface.index ~= 1 then
         return
     end
-    local radius = 1056
+    local radius = math.floor(storage.radius * 0.7)
     game.forces.player.chart(game.surfaces.nauvis, {{
         x = -radius,
         y = -radius
@@ -447,25 +429,35 @@ local change_seed = function()
     local mgs = game.surfaces["nauvis"].map_gen_settings
     mgs.seed = rng
     game.surfaces["nauvis"].map_gen_settings = mgs
+    storage.radius_of["nauvis"] = random_radius()
+
     if game.surfaces["vulcanus"] ~= nil then
         local mgs = game.surfaces["vulcanus"].map_gen_settings
         mgs.seed = rng
         game.surfaces["vulcanus"].map_gen_settings = mgs
+        storage.radius_of["vulcanus"] = random_radius()
+
     end
     if game.surfaces["gleba"] ~= nil then
         local mgs = game.surfaces["gleba"].map_gen_settings
         mgs.seed = rng
         game.surfaces["gleba"].map_gen_settings = mgs
+        storage.radius_of["gleba"] = random_radius()
+
     end
     if game.surfaces["fulgora"] ~= nil then
         local mgs = game.surfaces["fulgora"].map_gen_settings
         mgs.seed = rng
         game.surfaces["fulgora"].map_gen_settings = mgs
+        storage.radius_of["fulgora"] = random_radius()
+
     end
     if game.surfaces["aquilo"] ~= nil then
         local mgs = game.surfaces["aquilo"].map_gen_settings
         mgs.seed = rng
         game.surfaces["aquilo"].map_gen_settings = mgs
+        storage.radius_of["aquilo"] = random_radius()
+
     end
 end
 
@@ -558,24 +550,24 @@ script.on_init(function()
     storage.last_warp_tick = 0
     storage.last_warp_count = 0
 
-    storage.market_x = -1
+    storage.market_x = -2
     storage.market_y = -12
 
-    storage.requester_x = 1
-    storage.requester_y = -11
+    -- storage.requester_x = 1
+    -- storage.requester_y = -11
 
-    storage.storage_x = 1
-    storage.storage_y = -12
+    -- storage.storage_x = 1
+    -- storage.storage_y = -12
 
-    storage.provider_x = 1
-    storage.provider_y = -13
+    -- storage.provider_x = 1
+    -- storage.provider_y = -13
 
-    storage.pad_x = 0
-    storage.pad_y = 0
+    -- storage.pad_x = 0
+    -- storage.pad_y = 0
 
     storage.richness = 1
-    storage.radius_of = {}
     storage.radius = 1024
+    storage.radius_of = {}
 
     -- 母星污染
     game.map_settings.pollution.enabled = true
@@ -658,19 +650,13 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
         if ores then
             for i, entity in pairs(ores) do
-                entity.amount = entity.amount * 100 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
+                entity.amount = (entity.amount + math.random()) * 100 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
             end
         end
     end
 
     -- 圆形地图
-    if not storage.radius_of then
-        storage.radius_of = {}
-    end -- migration
     local r = storage.radius_of[surface.name]
-    if not r then -- migration
-        r = storage.radius
-    end
 
     if left_top.x * left_top.x + left_top.y * left_top.y < r * r / 2 then
         return
@@ -720,6 +706,10 @@ local function can_reset()
 end
 
 script.on_event(defines.events.on_research_finished, function(event)
+    if event.by_script then
+        return
+    end
+
     local research_name = event.research.name
     if research_name == "mining-productivity-3" then
         storage.mining_current = event.research.level - 1
