@@ -43,30 +43,23 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run}, make_tech('space-science-pack'),
-                   make_tech('metallurgic-science-pack'), make_tech('electromagnetic-science-pack'),
-                   make_tech('agricultural-science-pack'), make_tech('cryogenic-science-pack'),
+        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run},
                    make_tech('promethium-science-pack'), "\n", make_tech('epic-quality'),
-                   make_tech('legendary-quality'), make_tech('research-productivity')}
+                   make_tech('legendary-quality'), "\n", make_tech('steel-plate-productivity'),
+                   make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
+                   make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
+                   make_tech('rocket-part-productivity'), "\n", make_tech('asteroid-productivity'),
+                   make_tech('scrap-recycling-productivity'), make_tech('research-productivity')}
     }
 
-    -- player.gui.top.add {
-    --     type = "sprite-button",
-    --     sprite = "space-location/solar-system-edge",
-    --     name = "galaxy",
-    --     tooltip = {
-    --         "",
-
-    --         { "wn.galaxy-trait-title" },
-    --         { "wn.galaxy-trait-solar",           storage.solar_power_multiplier },
-    --         { "wn.galaxy-trait-platform-amount", storage.max_platform_count },
-    --         { "wn.galaxy-trait-platform-size",   storage.max_platform_size },
-
-    --         {
-    --             "wn.galaxy-trade", storage.requester_text, storage.provider_text
-    --         }
-    --     }
-    -- }
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "space-location/solar-system-edge",
+        name = "galaxy",
+        tooltip = {"", {"wn.galaxy-trait-title"}, {"wn.galaxy-trait-solar", storage.solar_power_multiplier},
+                   {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
+                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}}
+    }
 end
 
 local function players_gui()
@@ -89,14 +82,15 @@ end)
 local function galaxy_reset()
     -- 更新主线任务
     storage.mining_current = 0
-    storage.mining_needed = 100 -- + math.floor(math.pow(storage.run, 0.25))
+    storage.mining_needed = math.max(10, storage.run)
+    storage.arrived_edge = false
 
     storage.statistics_flags = {}
 
     -- 刷新星系参数
     storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
     storage.max_platform_count = 1 -- math.random(1, 6)
-    storage.max_platform_size = 256 -- math.random(2, 5) * math.random(2, 5) * 32
+    storage.max_platform_size = math.max(100 + storage.run, storage.run * 2) -- math.random(2, 5) * math.random(2, 5) * 32
 
     -- 不知道这行有没有用
     game.surfaces.nauvis.solar_power_multiplier = storage.solar_power_multiplier
@@ -121,30 +115,27 @@ local function galaxy_reset()
     end
 end
 
--- -- 查看交易信息
--- commands.add_command("trade", { "wn.trade-help" }, function(command)
---     local player = game.get_player(command.player_index)
---     if not player then return end
---     -- player.print('最大交易次数 ' .. storage.trade_max)
---     player.print({ "wn.galaxy-trade-max", storage.trade_max })
---     -- player.print('完成交易次数 ' .. storage.trade_done)
---     player.print({ "wn.galaxy-trade-done", storage.trade_done })
---     -- player.print('\n星系[item=requester-chest]收购\n' ..
---     --     storage.requester_text)
---     player.print({ "wn.galaxy-trade-request", storage.requester_text })
---     -- player.print('\n星系[item=passive-provider-chest]生产\n' ..
---     --     storage.provider_text)
---     player.print({ "wn.galaxy-trade-provide", storage.provider_text })
---     -- player.print('\n星系[item=storage-chest]奖励\n' .. storage.reward_text)
---     player.print({ "wn.galaxy-trade-reward", storage.reward_text })
--- end)
-
 -- 重置玩家
 local function player_reset(player)
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
     player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 end
+
+-- 开图
+script.on_event(defines.events.on_player_respawned, function(event)
+    local player = game.get_player(event.player_index)
+    if player then
+        local radius = 256
+        player.force.chart(player.surface, {{
+            x = -radius,
+            y = -radius
+        }, {
+            x = radius,
+            y = radius
+        }})
+    end
+end)
 
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
@@ -192,43 +183,6 @@ local function nauvis_reset()
     end
 
     local nauvis = game.surfaces.nauvis
-
-    -- local pad = nauvis.create_entity {
-    --     name = 'cargo-landing-pad',
-    --     quality = legendary,
-    --     position = {
-    --         x = storage.pad_x,
-    --         y = storage.pad_y
-    --     },
-    --     force = 'player'
-    -- }
-    -- protect(pad)
-
-    -- for y = 1, 4 do
-    --     for x = 1, 2 do
-    --         local bay = game.surfaces.nauvis.create_entity {
-    --             name = 'cargo-bay',
-    --             quality = legendary,
-    --             position = {
-    --                 x = -6 + 4 * x,
-    --                 y = 2 + 4 * y
-    --             },
-    --             force = 'player'
-    --         }
-    --         protect(bay)
-    --     end
-    -- end
-
-    -- local silo = game.surfaces.nauvis.create_entity {
-    --     name = 'rocket-silo',
-    --     quality = 'legendary',
-    --     position = {
-    --         x = 0,
-    --         y = -16
-    --     },
-    --     force = 'player'
-    -- }
-    -- protect(silo)
 
     -- 太阳能
     create_entity('solar-panel', -4.5, -14.5)
@@ -400,8 +354,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         r = storage.radius
     else
         r = storage.radius * (0.5 + math.random() + 2 * math.random() * math.random())
-        r = math.max(256, r)
-        r = math.min(1024, r)
+        r = math.max(512, r)
+        r = math.min(2048, r)
     end
 
     if not storage.radius_of then
@@ -412,7 +366,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     local platform = surface.platform
     if platform then
         local size = storage.max_platform_size
-        size = math.max(size, 64)
+        size = math.max(size, 128)
         mgs.width = size
         mgs.height = size
     else
@@ -488,44 +442,6 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     nauvis_reset()
 end)
 
--- local function tech_reset()
---     local force = game.forces.player
-
---     local researched_techs = {'biter-egg-handling'}
-
---     local enabled_techs = {}
-
---     local disabled_techs = {'cliff-explosives', 'atomic-bomb', 'belt-immunity-equipment', 'night-vision-equipment',
---                             'discharge-defense-equipment', 'toolbelt', 'heavy-armor', 'modular-armor',
---                             'solar-panel-equipment', 'personal-roboport-equipment', 'battery-equipment',
---                             'energy-shield-equipment', 'power-armor', 'power-armor-mk2', 'mech-armor',
---                             'fission-reactor-equipment', 'fusion-reactor-equipment', 'battery-mk2-equipment',
---                             'battery-mk3-equipment', 'personal-roboport-mk2-equipment', 'exoskeleton-equipment',
---                             'toolbelt-equipment', 'personal-laser-defense-equipment', 'energy-shield-mk2-equipment',
---                             'spidertron'}
-
---     local hidden_techs = {}
-
---     for _, tech_name in pairs(researched_techs) do
---         force.technologies[tech_name].researched = true
---     end
-
---     for _, tech_name in pairs(enabled_techs) do
---         force.technologies[tech_name].enabled = true
---         force.technologies[tech_name].visible_when_disabled = true
---     end
-
---     for _, tech_name in pairs(disabled_techs) do
---         force.technologies[tech_name].enabled = false
---         force.technologies[tech_name].visible_when_disabled = true
---     end
-
---     for _, tech_name in pairs(hidden_techs) do
---         force.technologies[tech_name].enabled = false
---         force.technologies[tech_name].visible_when_disabled = false
---     end
--- end
-
 local change_seed = function()
     local rng = math.random(1111, 4294967295)
     local mgs = game.surfaces["nauvis"].map_gen_settings
@@ -552,11 +468,6 @@ local change_seed = function()
         game.surfaces["aquilo"].map_gen_settings = mgs
     end
 end
-
--- todo:
--- 随机星系，星系特殊介绍文本
--- 开局科技
--- 星球特色参数、飞船大小、飞船数量
 
 -- 跃迁
 local function run_reset()
@@ -669,121 +580,11 @@ script.on_init(function()
     -- 母星污染
     game.map_settings.pollution.enabled = true
 
-    game.map_settings.pollution.min_to_diffuse = 1500
-    game.map_settings.pollution.diffusion_ratio = 0.0001
-
-    game.map_settings.pollution.expected_max_per_chunk = 1500
-    game.map_settings.pollution.min_to_show_per_chunk = 5
-
     game.map_settings.pollution.ageing = 0.1
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
 
     run_reset()
 end)
-
--- local half = 0.5
-
--- local function only_requester_chest()
---     return game.surfaces.nauvis.find_entity({
---         name = 'requester-chest',
---         quality = legendary
---     }, {storage.requester_x + half, storage.requester_y + half})
--- end
-
--- local function only_storage_chest()
---     return game.surfaces.nauvis.find_entity({
---         name = 'storage-chest',
---         quality = legendary
---     }, {storage.storage_x + half, storage.storage_y + half})
--- end
-
--- local function only_provider_chest()
---     return game.surfaces.nauvis.find_entity({
---         name = 'passive-provider-chest',
---         quality = legendary
---     }, {storage.provider_x + half, storage.provider_y + half})
--- end
-
--- commands.add_command("tree_min", '?', function(command)
---     local trees = game.surfaces.nauvis.find_entities_filtered({
---         area = {
---             left_top = {
---                 x = -640,
---                 y = -640
---             },
---             right_bottom = {
---                 x = 640,
---                 y = 640
---             }
---         },
---         type = 'tree'
---     })
---     if trees then
---         for i, tree in pairs(trees) do
---             if tree.tree_stage_index_max > 0 then
---                 tree.tree_stage_index = tree.tree_stage_index_max
---             end
---             if tree.tree_color_index_max > 0 then
---                 tree.tree_color_index = tree.tree_color_index_max
---             end
---             tree.tree_gray_stage_index = 15
---         end
---     end
--- end)
-
--- commands.add_command("tree_max", '?', function(command)
---     local trees = game.surfaces.nauvis.find_entities_filtered({
---         area = {
---             left_top = {
---                 x = -640,
---                 y = -640
---             },
---             right_bottom = {
---                 x = 640,
---                 y = 640
---             }
---         },
---         type = 'tree'
---     })
---     if trees then
---         for i, tree in pairs(trees) do
---             if tree.tree_stage_index_max > 0 then
---                 tree.tree_stage_index = 1
---             end
---             if tree.tree_color_index_max > 0 then
---                 tree.tree_color_index = 1
---             end
---             tree.tree_gray_stage_index = 0
---         end
---     end
--- end)
-
--- commands.add_command("tree_random", '?', function(command)
---     local trees = game.surfaces.nauvis.find_entities_filtered({
---         area = {
---             left_top = {
---                 x = -640,
---                 y = -640
---             },
---             right_bottom = {
---                 x = 640,
---                 y = 640
---             }
---         },
---         type = 'tree'
---     })
---     if trees then
---         for i, tree in pairs(trees) do
---             if tree.tree_stage_index_max > 0 then
---                 tree.tree_stage_index = math.random(1, tree.tree_stage_index_max)
---             end
---             if tree.tree_color_index_max > 0 then
---                 tree.tree_color_index = math.random(1, tree.tree_color_index_max)
---             end
---             tree.tree_gray_stage_index = math.random(1, 15)
---         end
---     end
--- end)
 
 script.on_event(defines.events.on_gui_click, function(event)
     if event.element.name == "suicide" then
@@ -915,7 +716,7 @@ local function print_tech_level()
 end
 
 local function can_reset()
-    return storage.mining_current >= storage.mining_needed
+    return storage.mining_current >= storage.mining_needed and storage.arrived_edge
 end
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -924,6 +725,8 @@ script.on_event(defines.events.on_research_finished, function(event)
         storage.mining_current = event.research.level - 1
         if (can_reset()) then
             -- run_reset()
+            print_tech_level()
+
             game.print({"wn.warp-command-hint"})
         else
             print_tech_level()
@@ -995,76 +798,6 @@ commands.add_command("warp", {"wn.warp-help"}, function(command)
     end
 end)
 
--- script.on_nth_tick(60 * 60, function()
---     -- 自动交易 60秒一次
-
---     if storage.reward_flag then
---         local chest = only_provider_chest()
---         --local chest = only_storage_chest()
---         if not chest then
---             game.print({ "wn.storage-chest-not-found" })
---         else
---             game.print({ "wn.congrats-research-productivity-first" })
---             if chest.can_insert {
---                     name = storage.reward_type,
---                     count = storage.reward_count,
---                     quality = storage.reward_quality
---                 } then
---                 storage.reward_flag = false
---                 game.print({ "wn.give-reward", storage.reward_text })
---                 chest.insert {
---                     name = storage.reward_type,
---                     count = storage.reward_count,
---                     quality = storage.reward_quality
---                 }
---             else
---                 game.print({ "wn.give-reward-fail-not-enough-storage" })
---             end
---         end
---     end
-
---     if storage.trade_done < storage.trade_max then
---         local requester = only_requester_chest()
---         if not requester then
---             game.print({ "wn.give-reward-fail-no-requester-chest" })
---             return
---         end
-
---         local count = requester.get_item_count({
---             name = storage.requester_type,
---             quality = storage.requester_quality
---         })
---         if count >= storage.requester_count then
---             local provider = only_provider_chest()
---             if not provider then
---                 game.print({ "wn.give-reward-fail-no-provider-chest" })
---                 return
---             end
-
---             if provider.can_insert {
---                     name = storage.provider_type,
---                     count = storage.provider_count,
---                     quality = storage.provider_quality
---                 } then
---                 storage.trade_done = storage.trade_done + 1
---                 provider.insert {
---                     name = storage.provider_type,
---                     count = storage.provider_count,
---                     quality = storage.provider_quality
---                 }
---                 game.print({
---                     "wn.", storage.requester_text, storage.provider_text
---                 })
---                 if storage.trade_done == storage.trade_max then
---                     game.print({ "wn.galaxy-trade-all-done" })
---                 end
---             else
---                 game.print({ "wn.give-reward-fail-not-enough-provider" })
---             end
---         end
---     end
--- end)
-
 script.on_nth_tick(60 * 60 * 60, function()
     -- 奖金发放 60分钟一次
     local salary = storage.run;
@@ -1098,27 +831,6 @@ script.on_nth_tick(60 * 60 * 180, function()
     end
 end)
 
--- 禁止母星货舱
-function on_built_entity(event)
-    local entity = event.entity
-    if not entity then
-        return
-    end
-    if not entity.valid then
-        return
-    end
-    if entity.surface.index ~= 1 then
-        return
-    end -- nauvis
-    if entity.type == 'cargo-bay' then
-        entity.die()
-        return
-    end
-end
-
-script.on_event(defines.events.on_built_entity, on_built_entity)
-script.on_event(defines.events.on_robot_built_entity, on_built_entity)
-
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
     -- 平台上限
     local platform = event.platform
@@ -1151,46 +863,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
     end
 
     -- 前往下一个地点
-    if name == edge and can_reset() then
-        run_reset()
+    if name == edge then
+        storage.arrived_edge = true
     end
 end)
-
--- -- print tile data
--- function tile_checker(event)
---     if event.name == defines.events.on_player_built_tile then
---         local player = game.get_player(event.player_index)
---         if player == nil then
---             return
---         end
---     end
---     local surface_index = event.surface_index
---     if surface_index ~= 1 then
---         return
---     end -- nauvis
---     local surface = game.surfaces[surface_index]
-
---     for _, tile_data in pairs(event.tiles) do
---         local position = tile_data.position
---         local hidden_tile = surface.get_hidden_tile(position)
---         local double_hidden_tile = surface.get_double_hidden_tile(position)
-
---         -- if hidden_tile == 'empty-space' then
---         --     surface.set_tiles({ { name = 'empty-space', position = position } })
---         --     -- surface.set_hidden_tile(position, 'empty-space')
---         -- end
-
---         if hidden_tile ~= nil then
---             surface.set_tiles({{
---                 name = hidden_tile,
---                 position = position
---             }})
---         end
---         if double_hidden_tile ~= nil then
---             surface.set_hidden_tile(position, double_hidden_tile)
---         end
---     end
--- end
-
--- script.on_event(defines.events.on_player_built_tile, tile_checker)
--- script.on_event(defines.events.on_robot_built_tile, tile_checker)
