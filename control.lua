@@ -406,8 +406,6 @@ local function run_reset()
     end
 
     -- 重置玩家势力
-    local enemy = game.forces.enemy
-    enemy.reset_evolution()
 
     local force = game.forces.player
     force.reset()
@@ -421,6 +419,8 @@ local function run_reset()
     game.reset_time_played()
 
     -- 母星污染
+    game.forces.enemy.reset_evolution()
+    game.map_settings.enemy_expansion.enabled = false
     game.map_settings.pollution.enabled = true
     game.map_settings.pollution.ageing = 0.1
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
@@ -498,6 +498,17 @@ end)
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
 
+    if table_size(game.connected_players <= 1) then
+        for _, player in pairs(game.players) do
+            player.clear_console()
+            -- for _, blueprint in pairs(player.blueprints) do
+            --     if blueprint.valid and blueprint.valid_for_write then 
+            --         blueprint.clear_blueprint() 
+            --     end
+            -- end
+        end
+    end
+
     local welcome = {}
     if player.online_time > 0 then
         local last_delta = math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
@@ -565,18 +576,10 @@ script.on_event(defines.events.on_chunk_generated, function(event)
             end
         end
     end
-    if #tiles > 0 then
+    if table_size(tiles) > 0 then
         surface.set_tiles(tiles)
     end
 end)
-
-local function startswith(str, start)
-    return string.sub(str, 1, #start) == start
-end
-
-local function endswith(str, ending)
-    return ending == "" or string.sub(str, -#ending) == ending
-end
 
 local function print_mining_productivity_level()
     game.print({"wn.warp-process", storage.mining_current, storage.mining_needed})
