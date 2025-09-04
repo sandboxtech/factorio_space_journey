@@ -62,7 +62,7 @@ local function player_gui(player)
         sprite = "space-location/solar-system-edge",
         name = "galaxy",
         tooltip = {"", {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
-                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, "\n", {"wn.galaxy-trait-title"}, "\n",
+                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, {"wn.galaxy-trait-title"},
                    {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
                    {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
                    {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
@@ -188,28 +188,10 @@ local function nauvis_reset()
     local market = markets[1]
     market.clear_market_items()
 
-    local items_1 = {'wood', 'stone', 'coal', 'iron-ore', 'copper-ore'}
-
-    for _, item in pairs(items_1) do
+    for _, item in pairs({'wood', 'raw-fish', 'biter-egg', 'yumako', 'jellynut'}) do
         market.add_market_item {
             price = {{
                 name = 'coin',
-                count = 1
-            }},
-            offer = {
-                type = "give-item",
-                item = item
-            }
-        }
-    end
-
-    local items_2 = {'raw-fish', 'biter-egg', 'uranium-ore'}
-
-    for _, item in pairs(items_2) do
-        market.add_market_item {
-            price = {{
-                name = 'coin',
-                quality = rare,
                 count = 1
             }},
             offer = {
@@ -220,51 +202,21 @@ local function nauvis_reset()
     end
 
     local market = markets[2]
+    market.clear_market_items()
 
-    market.add_market_item {
-        price = {{
-            name = 'coin',
-            quality = normal,
-            count = 25
-        }},
-        offer = {
-            type = "give-item",
-            item = 'modular-armor'
+    for _, item in pairs({'coal', 'stone', 'iron-ore', 'copper-ore', 'uranium-ore', 'tungsten-ore', 'scrap'}) do
+        market.add_market_item {
+            price = {{
+                name = 'coin',
+                count = 1
+            }},
+            offer = {
+                type = "give-item",
+                item = item
+            }
         }
-    }
-    market.add_market_item {
-        price = {{
-            name = 'coin',
-            quality = normal,
-            count = 1
-        }},
-        offer = {
-            type = "give-item",
-            item = 'solar-panel-equipment'
-        }
-    }
-    market.add_market_item {
-        price = {{
-            name = 'coin',
-            quality = normal,
-            count = 2
-        }},
-        offer = {
-            type = "give-item",
-            item = 'battery-equipment'
-        }
-    }
-    market.add_market_item {
-        price = {{
-            name = 'coin',
-            quality = normal,
-            count = 4
-        }},
-        offer = {
-            type = "give-item",
-            item = 'night-vision-equipment'
-        }
-    }
+    end
+
 end
 
 local function random_frequency()
@@ -280,7 +232,10 @@ local function random_richness()
 end
 
 local function random_nature()
-    return (0.1 + 0.9 * math.pow(2, (math.random() - math.random()) * 5))
+    if not storage.nature then
+        storage.nature = 3
+    end
+    return (0.1 + 0.9 * math.pow(2, (math.random() - math.random()) * storage.nature))
 end
 
 -- 创建随机表面
@@ -301,21 +256,17 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     surface.wind_speed = 0.02 * (0.5 + math.random())
     surface.wind_orientation = math.random()
     surface.wind_orientation_change = 0.0001 * (0.5 + math.random())
+    surface.solar_power_multiplier = storage.solar_power_multiplier
 
-    surface.freeze_daytime = false
     if math.random(1, 5) == 1 then
         -- 潮汐锁定，永昼
         surface.freeze_daytime = true
         surface.daytime = 0
-        surface.solar_power_multiplier = storage.solar_power_multiplier * (math.random(1, 2) * math.random(1, 3))
     elseif math.random(1, 10) == 1 then
         -- 潮汐锁定，永夜
         surface.freeze_daytime = true
         surface.daytime = 0.5
         surface.solar_power_multiplier = storage.solar_power_multiplier * 0.1
-    else
-        surface.min_brightness = math.random() * math.random() * 0.5
-        surface.solar_power_multiplier = storage.solar_power_multiplier
     end
 
     -- 刷新星球半径
@@ -338,37 +289,63 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     -- nauvis
     if surface == game.surfaces.nauvis then
+
         for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore'}) do
+            mgs.autoplace_controls[res].size = random_size()
             mgs.autoplace_controls[res].richness = random_richness()
             mgs.autoplace_controls[res].frequency = random_frequency()
         end
+
+        for _, res in pairs({'water', 'trees', 'enemy-base', 'rocks', 'nauvis_cliff'}) do
+            mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].frequency = random_frequency()
+        end
+
+        mgs.autoplace_controls['nauvis_cliff'].frequency = random_nature()
+        mgs.autoplace_controls['nauvis_cliff'].size = random_nature()
     end
 
     if surface == game.surfaces.vulcanus then
 
         for _, res in pairs({'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'}) do
+            mgs.autoplace_controls[res].size = random_size()
             mgs.autoplace_controls[res].richness = random_richness()
             mgs.autoplace_controls[res].frequency = random_frequency()
         end
-        mgs.autoplace_controls['vulcanus_volcanism'].richness = random_nature()
+        mgs.autoplace_controls['vulcanus_volcanism'].size = random_nature()
+        mgs.autoplace_controls['vulcanus_volcanism'].frequency = random_nature()
     end
 
     if surface == game.surfaces.fulgora then
-        mgs.autoplace_controls['scrap'].richness = random_richness()
+        for _, res in pairs({'scrap'}) do
+            mgs.autoplace_controls[res].size = random_size()
+            mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].frequency = random_frequency()
+        end
+
         mgs.autoplace_controls['fulgora_islands'].richness = random_nature()
+        mgs.autoplace_controls['fulgora_islands'].size = random_nature()
+        mgs.autoplace_controls['fulgora_islands'].frequency = random_nature()
+
+        mgs.autoplace_controls['fulgora_cliff'].richness = random_nature()
+        mgs.autoplace_controls['fulgora_cliff'].size = random_nature()
+        mgs.autoplace_controls['fulgora_cliff'].frequency = random_nature()
     end
 
     if surface == game.surfaces.gleba then
         mgs.autoplace_controls['gleba_stone'].richness = random_richness()
 
-        local enemy = 'gleba_enemy_base'
-        mgs.autoplace_controls[enemy].richness = math.random() * 6
-        mgs.autoplace_controls[enemy].size = math.random() * 6
-        mgs.autoplace_controls[enemy].frequency = math.random() * 6
+        mgs.autoplace_controls['gleba_enemy_base'].richness = math.random() * 6
+        mgs.autoplace_controls['gleba_enemy_base'].size = math.random() * 6
+        mgs.autoplace_controls['gleba_enemy_base'].frequency = math.random() * 6
 
         mgs.autoplace_controls['gleba_water'].richness = random_nature()
-        mgs.autoplace_controls['gleba_plants'].richness = random_nature()
+        mgs.autoplace_controls['gleba_water'].size = random_nature()
+        mgs.autoplace_controls['gleba_water'].frequency = random_nature()
 
+        mgs.autoplace_controls['gleba_plants'].richness = random_nature()
+        mgs.autoplace_controls['gleba_plants'].size = random_nature()
+        mgs.autoplace_controls['gleba_plants'].frequency = random_nature()
     end
 
     if surface == game.surfaces.aquilo then
@@ -383,7 +360,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     if surface.index ~= 1 then
         return
     end
-    local radius = math.floor(storage.radius * 0.7)
+    local radius = math.floor(storage.radius * 0.2)
     game.forces.player.chart(game.surfaces.nauvis, {{
         x = -radius,
         y = -radius
@@ -543,8 +520,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     local left_top = event.area.left_top
 
     if surface == game.surfaces.nauvis then
-
-        -- 富矿
+        -- 母星富矿
         local ores = game.surfaces[1].find_entities_filtered {
             area = event.area,
             name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
