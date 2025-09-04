@@ -59,7 +59,8 @@ local function player_gui(player)
                    {"wn.galaxy-trait-platform-size", storage.max_platform_size}, "\n",
                    {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
                    {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
-                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier}}
+                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
+                   {"wn.galaxy-trait-solar_power_multiplier", storage.solar_power_multiplier}}
     }
 end
 
@@ -79,58 +80,22 @@ commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     end
 end)
 
-local random_spoiltime = {0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20, 30, 50, 100}
-
--- 星系信息
-local function galaxy_reset()
-    -- 更新主线任务
-    storage.mining_current = 0
-    storage.mining_needed = math.min(100, math.max(10, storage.run))
-
-    game.map_settings.asteroids.spawning_rate = math.random(1, 2) * math.random(1, 2) * math.random(1, 2)
-
-    game.difficulty_settings.technology_price_multiplier = math.random(1, 2) * math.random(1, 3) * math.random(1, 5) *
-                                                               math.min(10, 1 + math.floor(storage.run / 10))
-    game.difficulty_settings.spoil_time_modifier = random_spoiltime[math.random(1, #random_spoiltime)]
-
-    storage.arrived_edge = false
-
-    -- 刷新星系参数
-    -- storage.solar_power_multiplier = math.random(1, 4) * math.random(1, 4) * math.random(1, 4) * 0.1
-    storage.max_platform_count = 1 -- math.random(1, 6)
-    storage.max_platform_size = math.max(100 + storage.run, storage.run * 2) -- math.random(2, 5) * math.random(2, 5) * 32
-
-    local force = game.forces.player
-
-    local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
-                                'processing-unit-productivity', 'rocket-part-productivity'}
-
-    local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
-                                  'scrap-recycling-productivity'}
-
-    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
-        for _, tech in pairs(techs) do
-            if math.random(10) == 1 then
-                force.technologies[tech].researched = true
-                force.technologies[tech].level = 100
-                break
-            end
-        end
-    end
-end
-
 -- 重置玩家
 local function player_reset(player)
+    if not player then
+        return
+    end
     if game.tick - player.last_online > 48 * hour_to_tick then
 
     end
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-
-    local pos = game.surfaces.nauvis.find_non_colliding_position(player, {storage.respawn_x, storage.respawn_y}, 1)
+    -- print(player)
+    local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
+        {storage.respawn_x, storage.respawn_y}, 0, 1)
     player.teleport(pos, game.surfaces.nauvis)
-
 end
+
 -- 开图
 script.on_event(defines.events.on_player_respawned, function(event)
     local player = game.get_player(event.player_index)
@@ -331,6 +296,16 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
 
+    if math.random(1, 5) == 1 then
+        surface.always_day = true
+        surface.min_brightness = 1
+        surface.solar_power_multiplier = storage.solar_power_multiplier * 10
+    else
+        surface.always_day = false
+        surface.min_brightness = math.random() * math.random() * 0.5
+        surface.solar_power_multiplier = storage.solar_power_multiplier
+    end
+
     local r
     if surface.name == 'nauvis' then
         r = storage.radius
@@ -425,61 +400,24 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     nauvis_reset()
 end)
 
-local change_seed = function()
-    local rng = math.random(1111, 4294967295)
-    local mgs = game.surfaces["nauvis"].map_gen_settings
-    mgs.seed = rng
-    game.surfaces["nauvis"].map_gen_settings = mgs
-    storage.radius_of["nauvis"] = random_radius()
-
-    if game.surfaces["vulcanus"] ~= nil then
-        local mgs = game.surfaces["vulcanus"].map_gen_settings
-        mgs.seed = rng
-        game.surfaces["vulcanus"].map_gen_settings = mgs
-        storage.radius_of["vulcanus"] = random_radius()
-
-    end
-    if game.surfaces["gleba"] ~= nil then
-        local mgs = game.surfaces["gleba"].map_gen_settings
-        mgs.seed = rng
-        game.surfaces["gleba"].map_gen_settings = mgs
-        storage.radius_of["gleba"] = random_radius()
-
-    end
-    if game.surfaces["fulgora"] ~= nil then
-        local mgs = game.surfaces["fulgora"].map_gen_settings
-        mgs.seed = rng
-        game.surfaces["fulgora"].map_gen_settings = mgs
-        storage.radius_of["fulgora"] = random_radius()
-
-    end
-    if game.surfaces["aquilo"] ~= nil then
-        local mgs = game.surfaces["aquilo"].map_gen_settings
-        mgs.seed = rng
-        game.surfaces["aquilo"].map_gen_settings = mgs
-        storage.radius_of["aquilo"] = random_radius()
-
-    end
-end
-
 -- 跃迁
 local function run_reset()
 
     storage.run = storage.run + 1
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
+    -- 更新主线任务
+    storage.mining_current = 0
+    storage.mining_needed = math.min(100, math.max(10, storage.run))
 
-    -- 母星污染
-    game.map_settings.pollution.enabled = true
-    game.map_settings.pollution.ageing = 0.1
-    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
+    -- -- 召回玩家到母星
+    -- for _, player in pairs(game.players) do
+    --     local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
+    --         {storage.respawn_x, storage.respawn_y}, 0, 1)
+    --     player.teleport(pos, game.surfaces.nauvis)
+    -- end
 
-    -- 召回玩家到母星
-    for _, player in pairs(game.players) do
-        player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
-    end
-
-    change_seed()
+    -- change_seed()
     -- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
     game.surfaces["nauvis"].clear(true)
     if game.surfaces["vulcanus"] ~= nil then
@@ -510,8 +448,38 @@ local function run_reset()
                 math.floor((game.tick % min_to_tick) / min_to_tick)})
     game.reset_time_played()
 
-    -- 更新本run
-    galaxy_reset()
+    -- 母星污染
+    game.map_settings.pollution.enabled = true
+    game.map_settings.pollution.ageing = 0.1
+    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
+
+    game.map_settings.asteroids.spawning_rate = math.random(1, 2) * math.random(1, 2) * math.random(1, 2)
+    game.difficulty_settings.technology_price_multiplier = math.random(1, 2) * math.random(1, 3) * math.random(1, 5) *
+                                                               math.min(10, 1 + math.floor(storage.run / 10))
+    game.difficulty_settings.spoil_time_modifier = 0.1 * math.random(1, 2) * math.random(1, 3) * math.random(1, 5)
+
+    -- 刷新星系参数
+    storage.solar_power_multiplier = math.random(1, 2) * math.random(1, 3) * math.random(1, 5) * 0.1
+    storage.max_platform_count = 1 -- math.random(1, 6)
+    storage.max_platform_size = math.max(100 + storage.run, storage.run * 2) -- math.random(2, 5) * math.random(2, 5) * 32
+
+    local force = game.forces.player
+
+    local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
+                                'processing-unit-productivity', 'rocket-part-productivity'}
+
+    local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
+                                  'scrap-recycling-productivity'}
+
+    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
+        for _, tech in pairs(techs) do
+            if math.random(10) == 1 then
+                force.technologies[tech].researched = true
+                force.technologies[tech].level = 100
+                break
+            end
+        end
+    end
 
     -- 更新UI信息
     players_gui()
@@ -520,7 +488,7 @@ local function run_reset()
     for _, player in pairs(game.players) do
         player_reset(player)
         if not player.surface.platform then
-            player.die()
+            player.character.die()
         end
     end
 end
