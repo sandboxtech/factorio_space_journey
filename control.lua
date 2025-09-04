@@ -44,11 +44,11 @@ local function player_gui(player)
         name = "statistics",
         tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run}, make_tech('cryogenic-science-pack'),
                    make_tech('promethium-science-pack'), make_tech('epic-quality'), make_tech('legendary-quality'),
-                   "\n", make_tech('steel-plate-productivity'), make_tech('plastic-bar-productivity'),
-                   make_tech('rocket-fuel-productivity'), make_tech('processing-unit-productivity'),
-                   make_tech('low-density-structure-productivity'), make_tech('rocket-part-productivity'), "\n",
-                   make_tech('asteroid-productivity'), make_tech('scrap-recycling-productivity'),
-                   make_tech('research-productivity')}
+                   "\n", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
+                   make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
+                   make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
+                   make_tech('rocket-part-productivity'), "\n", make_tech('asteroid-productivity'),
+                   make_tech('scrap-recycling-productivity'), make_tech('research-productivity')}
     }
 
     player.gui.top.add {
@@ -122,11 +122,14 @@ end
 
 -- 重置玩家
 local function player_reset(player)
+    if game.tick - player.last_online > 48 * hour_to_tick then
+
+    end
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
     player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
-end
 
+end
 -- 开图
 script.on_event(defines.events.on_player_respawned, function(event)
     local player = game.get_player(event.player_index)
@@ -144,11 +147,6 @@ end)
 
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
-    local admin = 'hncs' .. 'ltok'
-    local player = game.get_player(event.player_index)
-    if player.name == admin then
-        player.admin = true
-    end
     player_reset(player)
     player_gui(player)
 end)
@@ -211,7 +209,7 @@ local function nauvis_reset()
     create_entity('market', storage.market_x + 3, storage.market_y)
 
     local nauvis = game.surfaces.nauvis
-    nauvis.peaceful_mode = storage.run <= 3
+    nauvis.peaceful_mode = storage.run <= 1
     local markets = nauvis.find_entities_filtered {
         area = {{-32, -32}, {32, 32}},
         type = "market"
@@ -225,7 +223,7 @@ local function nauvis_reset()
     local market = markets[1]
     market.clear_market_items()
 
-    local items_1 = {'wood'}
+    local items_1 = {'wood', 'stone', 'coal', 'iron-ore', 'copper-ore'}
 
     for _, item in pairs(items_1) do
         market.add_market_item {
@@ -587,23 +585,23 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_pre_surface_cleared, function(event)
-    if event.surface_index == 1 then
-        -- We need to kill all players _before_ the surface is cleared, so that
-        -- their inventory, and crafting queue, end up on the old surface
-        for _, pl in pairs(game.players) do
-            if pl.connected and pl.character ~= nil then
-                -- We call die() here because otherwise we will spawn a duplicate
-                -- character, who will carry over into the new surface
-                pl.character.die()
-            end
-            -- Setting [ticks_to_respawn] to 1 seems to consistantly kill offline
-            -- players. Calling this for online players will cause them instead be
-            -- respawned the next tick, skipping the 10 respawn second timer.
-            pl.ticks_to_respawn = 1
-            --  Need to teleport otherwise offline players will force generate many chunks on new surface at their position on old surface when they rejoin.
-            pl.teleport({0, 0}, "nauvis")
-        end
-    end
+    -- if event.surface_index == 1 then
+    --     -- We need to kill all players _before_ the surface is cleared, so that
+    --     -- their inventory, and crafting queue, end up on the old surface
+    --     for _, pl in pairs(game.players) do
+    --         if pl.connected and pl.character ~= nil then
+    --             -- We call die() here because otherwise we will spawn a duplicate
+    --             -- character, who will carry over into the new surface
+    --             pl.character.die()
+    --         end
+    --         -- Setting [ticks_to_respawn] to 1 seems to consistantly kill offline
+    --         -- players. Calling this for online players will cause them instead be
+    --         -- respawned the next tick, skipping the 10 respawn second timer.
+    --         pl.ticks_to_respawn = 1
+    --         --  Need to teleport otherwise offline players will force generate many chunks on new surface at their position on old surface when they rejoin.
+    --         pl.teleport({0, 0}, "nauvis")
+    --     end
+    -- end
 end)
 
 -- 星球圆形地块生成
@@ -638,7 +636,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
         if ores then
             for i, entity in pairs(ores) do
-                entity.amount = (entity.amount + math.random()) * 100 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
+                entity.amount = (entity.amount + math.random()) * 10 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
             end
         end
     end
