@@ -457,6 +457,7 @@ local function run_reset()
 
     storage.run = storage.run + 1
     storage.run_start_tick = game.tick
+    storage.statistics_in_run = {}
 
     -- 召回玩家到母星
     for _, player in pairs(game.players) do
@@ -532,6 +533,7 @@ script.on_init(function()
     storage.respawn_y = -5
 
     storage.statistics = {}
+    storage.statistics_in_run = {}
 
     storage.speed_penalty_enabled = false
     storage.speed_penalty_day = 5
@@ -809,13 +811,13 @@ end)
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
     -- 平台上限
     local platform = event.platform
-    if event.old_state == 0 then
-        local force = platform.force
-        if #force.platforms > storage.max_platform_count then
-            platform.destroy(1)
-            game.print({"wn.too-many-platforms", storage.max_platform_count})
-        end
+    -- if event.old_state == 0 then
+    local force = platform.force
+    if #force.platforms > storage.max_platform_count then
+        platform.destroy(1)
+        game.print({"wn.too-many-platforms", storage.max_platform_count})
     end
+    -- end
 
     -- 首次到达
     local platform = event.platform
@@ -831,7 +833,10 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
     else
         storage.statistics[name] = storage.statistics[name] + 1
     end
-    game.print({"wn.congrats-first-visit", name})
+    if not storage.statistics_in_run then
+        storage.statistics_in_run[name] = true
+        game.print({"wn.congrats-first-visit", name})
+    end
     players_gui()
 
     -- 前往下一个地点
