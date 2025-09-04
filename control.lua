@@ -79,9 +79,8 @@ commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     end
 end)
 
-local random_asteroids = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6, 7, 7}
-local random_techprice = {0.1, 0.2, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3,
-                          3, 3, 5, 5, 5, 10, 10, 20, 50, 100}
+local random_asteroids = {1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8}
+local random_techprice = {1, 1, 1, 1, 1, 2, 2, 2, 2, 10, 10, 20, 50, 100}
 local random_spoiltime = {0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20, 30, 50, 100}
 
 -- 星系信息
@@ -91,7 +90,8 @@ local function galaxy_reset()
     storage.mining_needed = math.min(100, math.max(10, storage.run))
 
     game.map_settings.asteroids.spawning_rate = random_asteroids[math.random(1, #random_asteroids)]
-    game.difficulty_settings.technology_price_multiplier = random_techprice[math.random(1, #random_techprice)]
+    game.difficulty_settings.technology_price_multiplier = random_techprice[math.random(1, #random_techprice)] *
+                                                               math.min(10, 1 + math.floor(storage.run / 10))
     game.difficulty_settings.spoil_time_modifier = random_spoiltime[math.random(1, #random_spoiltime)]
 
     storage.arrived_edge = false
@@ -127,7 +127,9 @@ local function player_reset(player)
     end
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+
+    local pos = game.surfaces.nauvis.find_non_colliding_position(player, {storage.respawn_x, storage.respawn_y}, 1)
+    player.teleport(pos, game.surfaces.nauvis)
 
 end
 -- 开图
@@ -147,6 +149,7 @@ end)
 
 -- 创建玩家
 script.on_event(defines.events.on_player_created, function(event)
+    local player = game.get_player(event.player_index)
     player_reset(player)
     player_gui(player)
 end)
@@ -514,6 +517,9 @@ local function run_reset()
     -- 重置玩家
     for _, player in pairs(game.players) do
         player_reset(player)
+        if not player.surface.platform then
+            player.die()
+        end
     end
 end
 
@@ -691,16 +697,7 @@ local function print_mining_productivity_level()
 end
 
 local function can_reset()
-    return storage.mining_current >= storage.mining_needed and storage.arrived_edge
-end
-
-local function try_reset()
-    if can_reset() then
-        run_reset()
-        return true
-    else
-        return false
-    end
+    return storage.mining_current >= storage.mining_needed
 end
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -708,18 +705,8 @@ script.on_event(defines.events.on_research_finished, function(event)
     local research_name = event.research.name
     if research_name == "mining-productivity-3" then
         storage.mining_current = event.research.level - 1
-        if (can_reset()) then
-            -- run_reset()
-            if (not event.by_script) then
-                print_mining_productivity_level()
-            end
-
-            game.print({"wn.warp-command-hint"})
-        else
-            if (not event.by_script) then
-                print_mining_productivity_level()
-            end
-
+        if (not event.by_script) then
+            print_mining_productivity_level()
         end
     elseif research_name == "mining-productivity-2" then
         storage.mining_current = 2
@@ -849,6 +836,8 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
 
     -- 前往下一个地点
     if name == edge then
-        storage.arrived_edge = true
+        if (can_reset()) then
+            run_reset()
+        end
     end
 end)
