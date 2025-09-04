@@ -79,8 +79,6 @@ commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     end
 end)
 
-local random_asteroids = {1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8}
-local random_techprice = {1, 1, 1, 1, 1, 2, 2, 2, 2, 10, 10, 20, 50, 100}
 local random_spoiltime = {0.1, 0.2, 0.2, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 10, 20, 30, 50, 100}
 
 -- 星系信息
@@ -89,8 +87,9 @@ local function galaxy_reset()
     storage.mining_current = 0
     storage.mining_needed = math.min(100, math.max(10, storage.run))
 
-    game.map_settings.asteroids.spawning_rate = random_asteroids[math.random(1, #random_asteroids)]
-    game.difficulty_settings.technology_price_multiplier = random_techprice[math.random(1, #random_techprice)] *
+    game.map_settings.asteroids.spawning_rate = math.random(1, 2) * math.random(1, 2) * math.random(1, 2)
+
+    game.difficulty_settings.technology_price_multiplier = math.random(1, 2) * math.random(1, 3) * math.random(1, 5) *
                                                                math.min(10, 1 + math.floor(storage.run / 10))
     game.difficulty_settings.spoil_time_modifier = random_spoiltime[math.random(1, #random_spoiltime)]
 
@@ -305,16 +304,25 @@ local function nauvis_reset()
     }
 end
 
+local function random_frequency()
+    return (0.5 + 5 * math.random() * math.random() * math.random()) * storage.richness
+end
+
+local function random_size()
+    return (0.5 + math.random() * math.random())
+end
+
 local function random_richness()
     return (0.1 + 5 * math.random() * math.random() * math.random()) * storage.richness
 end
 
 local function random_radius()
-    return (1 + 8 * math.random() * math.random() * math.random()) * storage.radius
+    return (0.5 + 4 * math.random() * math.random() * math.random()) * storage.radius
 end
 
 -- 创建随机表面
 script.on_event(defines.events.on_surface_cleared, function(event)
+
     local surface = game.get_surface(event.surface_index)
     if not surface then
         return
@@ -327,10 +335,12 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     if surface.name == 'nauvis' then
         r = storage.radius
     else
-        r = storage.radius * (0.5 + math.random() + 2 * math.random() * math.random())
+        r = storage.radius * (0.5 + 4 * math.random() * math.random() * math.random() * math.random())
         r = math.max(512, r)
-        r = math.min(2048, r)
+        r = math.min(4096, r)
     end
+
+    local r = random_radius()
 
     storage.radius_of[surface.name] = r
 
@@ -459,6 +469,11 @@ local function run_reset()
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
 
+    -- 母星污染
+    game.map_settings.pollution.enabled = true
+    game.map_settings.pollution.ageing = 0.1
+    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
+
     -- 召回玩家到母星
     for _, player in pairs(game.players) do
         player.teleport({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
@@ -479,14 +494,6 @@ local function run_reset()
     if game.surfaces["aquilo"] ~= nil then
         game.surfaces["aquilo"].clear(true)
     end
-    -- We delete space platforms
-    -- for _, surface in pairs(game.surfaces) do
-    -- 	if surface.platform then
-    -- 		game.delete_surface(surface)
-    -- 	end
-    -- end
-
-    -- nauvis_reset()
 
     -- 重置玩家势力
     local enemy = game.forces.enemy
@@ -498,12 +505,6 @@ local function run_reset()
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 
     -- 重置科技
-
-    -- -- 删除平台
-    -- for _, platform in pairs(force.platforms) do
-    --     game.print({"wn.farewell-platform", platform.name})
-    --     platform.destroy(1)
-    -- end
 
     game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
                 math.floor((game.tick % min_to_tick) / min_to_tick)})
@@ -547,27 +548,12 @@ script.on_init(function()
     storage.market_x = -2
     storage.market_y = -12
 
-    -- storage.requester_x = 1
-    -- storage.requester_y = -11
-
-    -- storage.storage_x = 1
-    -- storage.storage_y = -12
-
-    -- storage.provider_x = 1
-    -- storage.provider_y = -13
-
-    -- storage.pad_x = 0
-    -- storage.pad_y = 0
-
     storage.richness = 1
+    storage.frequency = 1
+    storage.size = 1
+
     storage.radius = 1024
     storage.radius_of = {}
-
-    -- 母星污染
-    game.map_settings.pollution.enabled = true
-
-    game.map_settings.pollution.ageing = 0.1
-    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = 0.1
 
     run_reset()
 end)
@@ -593,23 +579,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 script.on_event(defines.events.on_pre_surface_cleared, function(event)
-    -- if event.surface_index == 1 then
-    --     -- We need to kill all players _before_ the surface is cleared, so that
-    --     -- their inventory, and crafting queue, end up on the old surface
-    --     for _, pl in pairs(game.players) do
-    --         if pl.connected and pl.character ~= nil then
-    --             -- We call die() here because otherwise we will spawn a duplicate
-    --             -- character, who will carry over into the new surface
-    --             pl.character.die()
-    --         end
-    --         -- Setting [ticks_to_respawn] to 1 seems to consistantly kill offline
-    --         -- players. Calling this for online players will cause them instead be
-    --         -- respawned the next tick, skipping the 10 respawn second timer.
-    --         pl.ticks_to_respawn = 1
-    --         --  Need to teleport otherwise offline players will force generate many chunks on new surface at their position on old surface when they rejoin.
-    --         pl.teleport({0, 0}, "nauvis")
-    --     end
-    -- end
+
 end)
 
 -- 星球圆形地块生成
@@ -619,24 +589,8 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     local left_top = event.area.left_top
 
     if surface == game.surfaces.nauvis then
-        -- -- 无敌虫巢和树和石头
-        -- local entities_list = { 'unit-spawner', 'tree', 'simple-entity', }
 
-        -- for _, entity_type in pairs(entities_list)
-        -- do
-        --     local entities = surface.find_entities_filtered({
-        --         area = event.area,
-        --         type = entity_type
-        --     })
-        --     if entities then
-        --         for i, entity in pairs(entities) do
-        --             entity.minable = false
-        --             entity.destructible = false
-        --         end
-        --     end
-        -- end
-
-        -- 超富矿
+        -- 富矿
         local ores = game.surfaces[1].find_entities_filtered {
             area = event.area,
             name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
@@ -742,38 +696,38 @@ commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
     end
 end)
 
--- 手动跃迁
-commands.add_command("warp", {"wn.warp-help"}, function(command)
-    local player_name = "<server>"
-    local player = nil
-    if command.player_index then
-        player = game.get_player(command.player_index)
-        player_name = player.name
-    end
+-- -- 手动跃迁
+-- commands.add_command("warp", {"wn.warp-help"}, function(command)
+--     local player_name = "<server>"
+--     local player = nil
+--     if command.player_index then
+--         player = game.get_player(command.player_index)
+--         player_name = player.name
+--     end
 
-    if player and player.online_time < 60 * 60 * 60 * 6 then
-        player.print({"wn.warp-permission-denied"})
-    end
+--     if player and player.online_time < 60 * 60 * 60 * 6 then
+--         player.print({"wn.warp-permission-denied"})
+--     end
 
-    local count = 3
-    if not can_reset() then
-        if player then
-            player.print({"wn.warp-condition-false"})
-        end
-    else
-        storage.last_warp = game.tick
-        if game.tick - storage.last_warp > 60 * 10 then
-            storage.last_warp_count = 0
-            game.print({"wn.player-warp-1", player_name})
-        elseif storage.last_warp_count < count then
-            storage.last_warp_count = storage.last_warp_count + 1
-            game.print({"wn.player-warp-2", player_name, storage.last_warp_count})
-        else
-            game.print({"wn.player-warp-3", player_name})
-            run_reset()
-        end
-    end
-end)
+--     local count = 3
+--     if not can_reset() then
+--         if player then
+--             player.print({"wn.warp-condition-false"})
+--         end
+--     else
+--         storage.last_warp = game.tick
+--         if game.tick - storage.last_warp > 60 * 10 then
+--             storage.last_warp_count = 0
+--             game.print({"wn.player-warp-1", player_name})
+--         elseif storage.last_warp_count < count then
+--             storage.last_warp_count = storage.last_warp_count + 1
+--             game.print({"wn.player-warp-2", player_name, storage.last_warp_count})
+--         else
+--             game.print({"wn.player-warp-3", player_name})
+--             run_reset()
+--         end
+--     end
+-- end)
 
 script.on_nth_tick(60 * 60 * 60, function()
     -- 奖金发放 60分钟一次
@@ -790,34 +744,34 @@ script.on_nth_tick(60 * 60 * 60, function()
     game.print({"wn.give-salary", salary})
 end)
 
-script.on_nth_tick(60 * 60 * 180, function()
-    -- 修改游戏运行速度
-    if not storage.speed_penalty_enabled then
-        return
-    end
+-- script.on_nth_tick(60 * 60 * 180, function()
+--     -- 修改游戏运行速度
+--     if not storage.speed_penalty_enabled then
+--         return
+--     end
 
-    local time_played = game.tick - storage.run_start_tick
+--     local time_played = game.tick - storage.run_start_tick
 
-    local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
-    game_speed = math.min(game_speed, 1)
-    game_speed = math.max(game_speed, 0.125)
+--     local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
+--     game_speed = math.min(game_speed, 1)
+--     game_speed = math.max(game_speed, 0.125)
 
-    if game.speed < 1 then
-        game.speed = game_speed
-        game.print({"wn.game-speed-penalty", game_speed})
-    end
-end)
+--     if game.speed < 1 then
+--         game.speed = game_speed
+--         game.print({"wn.game-speed-penalty", game_speed})
+--     end
+-- end)
 
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
     -- 平台上限
     local platform = event.platform
-    -- if event.old_state == 0 then
-    local force = platform.force
-    if #force.platforms > storage.max_platform_count then
-        platform.destroy(1)
-        game.print({"wn.too-many-platforms", storage.max_platform_count})
+    if event.old_state == 0 then
+        local force = platform.force
+        if table_size(force.platforms) > storage.max_platform_count then
+            platform.destroy(1)
+            game.print({"wn.too-many-platforms", storage.max_platform_count})
+        end
     end
-    -- end
 
     -- 首次到达
     local platform = event.platform
@@ -834,6 +788,9 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         storage.statistics[name] = storage.statistics[name] + 1
     end
     if not storage.statistics_in_run then
+        storage.statistics_in_run = {}
+    end
+    if not storage.statistics_in_run[name] then
         storage.statistics_in_run[name] = true
         game.print({"wn.congrats-first-visit", name})
     end
