@@ -42,21 +42,27 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run}, make_tech('cryogenic-science-pack'),
-                   make_tech('promethium-science-pack'), make_tech('epic-quality'), make_tech('legendary-quality'),
-                   "\n", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
-                   make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
-                   make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
-                   make_tech('rocket-part-productivity'), "\n", make_tech('asteroid-productivity'),
-                   make_tech('scrap-recycling-productivity'), make_tech('research-productivity')}
+        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run},
+                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
+                    make_tech('chemical-science-pack'), make_tech('production-science-pack'),
+                    make_tech('utility-science-pack'), make_tech('space-science-pack'),
+                    make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
+                    make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
+                    make_tech('promethium-science-pack')}, "\n", make_tech('epic-quality'),
+                   make_tech('legendary-quality'), "\n", make_tech('mining-productivity-3'),
+                   make_tech('steel-plate-productivity'), make_tech('plastic-bar-productivity'),
+                   make_tech('rocket-fuel-productivity'), make_tech('processing-unit-productivity'),
+                   make_tech('low-density-structure-productivity'), make_tech('rocket-part-productivity'), "\n",
+                   make_tech('asteroid-productivity'), make_tech('scrap-recycling-productivity'),
+                   make_tech('research-productivity')}
     }
 
     player.gui.top.add {
         type = "sprite-button",
         sprite = "space-location/solar-system-edge",
         name = "galaxy",
-        tooltip = {"", {"wn.galaxy-trait-title"}, {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
-                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, "\n",
+        tooltip = {"", {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
+                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, "\n", {"wn.galaxy-trait-title"}, "\n",
                    {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
                    {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
                    {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
@@ -118,14 +124,6 @@ script.on_event(defines.events.on_player_created, function(event)
     player_gui(player)
 end)
 
--- 删除表面
-script.on_event(defines.events.on_surface_deleted, function(event)
-    local surface = game.get_surface(event.surface_index)
-    if surface then
-        game.print({"wn.farewell-surface", {"space-location-name." .. surface.name}})
-    end
-end)
-
 local function protect(entity)
     entity.minable = false
     entity.destructible = false
@@ -172,8 +170,8 @@ local function nauvis_reset()
     create_entity('accumulator', -4, -12)
 
     -- 市场
-    create_entity('market', storage.market_x, storage.market_y)
-    create_entity('market', storage.market_x + 3, storage.market_y)
+    create_entity('market', -2, -12)
+    create_entity('market', 1, -12)
 
     local nauvis = game.surfaces.nauvis
     nauvis.peaceful_mode = storage.run <= 1
@@ -270,19 +268,19 @@ local function nauvis_reset()
 end
 
 local function random_frequency()
-    return (0.5 + 5 * math.random() * math.random() * math.random()) * storage.richness
+    return (0.5 + 0.5 * math.pow(2, (math.random() - math.random()) * 3)) * storage.frequency
 end
 
 local function random_size()
-    return (0.5 + math.random() * math.random())
+    return (0.5 + 0.5 * math.pow(2, (math.random() - math.random()) * 3)) * storage.size
 end
 
 local function random_richness()
-    return (0.1 + 5 * math.random() * math.random() * math.random()) * storage.richness
+    return (0.1 + 0.9 * math.pow(2, (math.random() - math.random()) * 6)) * storage.richness
 end
 
-local function random_radius()
-    return (0.5 + 4 * math.random() * math.random() * math.random()) * storage.radius
+local function random_nature()
+    return (0.1 + 0.9 * math.pow(2, (math.random() - math.random()) * 5))
 end
 
 -- 创建随机表面
@@ -296,33 +294,40 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     local mgs = surface.map_gen_settings
     mgs.seed = math.random(1, 4294967295)
 
+    -- 星球昼夜
+    surface.always_day = false
+    surface.freeze_daytime = false
+    surface.min_brightness = 0.15 * (2 * math.random())
+    surface.wind_speed = 0.02 * (0.5 + math.random())
+    surface.wind_orientation = math.random()
+    surface.wind_orientation_change = 0.0001 * (0.5 + math.random())
+
+    surface.freeze_daytime = false
     if math.random(1, 5) == 1 then
-        surface.always_day = true
-        surface.min_brightness = 1
-        surface.solar_power_multiplier = storage.solar_power_multiplier * 10
+        -- 潮汐锁定，永昼
+        surface.freeze_daytime = true
+        surface.daytime = 0
+        surface.solar_power_multiplier = storage.solar_power_multiplier * (math.random(1, 2) * math.random(1, 3))
+    elseif math.random(1, 10) == 1 then
+        -- 潮汐锁定，永夜
+        surface.freeze_daytime = true
+        surface.daytime = 0.5
+        surface.solar_power_multiplier = storage.solar_power_multiplier * 0.1
     else
-        surface.always_day = false
         surface.min_brightness = math.random() * math.random() * 0.5
         surface.solar_power_multiplier = storage.solar_power_multiplier
     end
 
-    local r
-    if surface.name == 'nauvis' then
-        r = storage.radius
-    else
-        r = storage.radius * (0.5 + 4 * math.random() * math.random() * math.random() * math.random())
-        r = math.max(512, r)
-        r = math.min(4096, r)
-    end
-
-    local r = random_radius()
-
+    -- 刷新星球半径
+    local r = storage.radius * (0.25 + 4 * math.random() * math.random() * math.random() * math.random())
+    r = math.max(512, r)
+    r = math.min(4096, r)
     storage.radius_of[surface.name] = r
 
     local platform = surface.platform
     if platform then
         local size = storage.max_platform_size
-        size = math.max(size, 128)
+        size = math.max(size, 96)
         mgs.width = size
         mgs.height = size
     else
@@ -332,48 +337,38 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     -- 重置mgs
 
     -- nauvis
-    -- 'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore',
+    if surface == game.surfaces.nauvis then
+        for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore'}) do
+            mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].frequency = random_frequency()
+        end
+    end
 
     if surface == game.surfaces.vulcanus then
-        local richness = random_richness()
 
         for _, res in pairs({'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'}) do
-            mgs.autoplace_controls[res].richness = richness
+            mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].frequency = random_frequency()
         end
-
-        local volcanism = 'vulcanus_volcanism'
-        mgs.autoplace_controls[volcanism].richness = random_richness()
+        mgs.autoplace_controls['vulcanus_volcanism'].richness = random_nature()
     end
 
     if surface == game.surfaces.fulgora then
-        for _, res in pairs({'scrap'}) do
-            local richness = random_richness()
-            mgs.autoplace_controls[res].richness = richness
-        end
-
-        local fulgora_islands = 'fulgora_islands'
-        mgs.autoplace_controls[fulgora_islands].richness = random_richness()
+        mgs.autoplace_controls['scrap'].richness = random_richness()
+        mgs.autoplace_controls['fulgora_islands'].richness = random_nature()
     end
 
     if surface == game.surfaces.gleba then
-        local res = 'gleba_stone'
-        local richness = random_richness()
-        mgs.autoplace_controls[res].richness = richness
+        mgs.autoplace_controls['gleba_stone'].richness = random_richness()
 
         local enemy = 'gleba_enemy_base'
         mgs.autoplace_controls[enemy].richness = math.random() * 6
         mgs.autoplace_controls[enemy].size = math.random() * 6
         mgs.autoplace_controls[enemy].frequency = math.random() * 6
 
-        local water = 'gleba_water'
-        local richness = random_richness()
+        mgs.autoplace_controls['gleba_water'].richness = random_nature()
+        mgs.autoplace_controls['gleba_plants'].richness = random_nature()
 
-        mgs.autoplace_controls[water].richness = richness
-
-        local plants = 'gleba_plants'
-        local richness = random_richness()
-
-        mgs.autoplace_controls[plants].richness = richness
     end
 
     if surface == game.surfaces.aquilo then
@@ -504,23 +499,14 @@ script.on_init(function()
     storage.statistics = {}
     storage.statistics_in_run = {}
 
-    storage.speed_penalty_enabled = false
-    storage.speed_penalty_day = 5
-
-    storage.mining_current = 0
-    storage.mining_needed = 10
-
     storage.last_warp_tick = 0
     storage.last_warp_count = 0
-
-    storage.market_x = -2
-    storage.market_y = -12
 
     storage.richness = 1
     storage.frequency = 1
     storage.size = 1
 
-    storage.radius = 1024
+    storage.radius = 2048
     storage.radius_of = {}
 
     run_reset()
@@ -664,39 +650,6 @@ commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
     end
 end)
 
--- -- 手动跃迁
--- commands.add_command("warp", {"wn.warp-help"}, function(command)
---     local player_name = "<server>"
---     local player = nil
---     if command.player_index then
---         player = game.get_player(command.player_index)
---         player_name = player.name
---     end
-
---     if player and player.online_time < 60 * 60 * 60 * 6 then
---         player.print({"wn.warp-permission-denied"})
---     end
-
---     local count = 3
---     if not can_reset() then
---         if player then
---             player.print({"wn.warp-condition-false"})
---         end
---     else
---         storage.last_warp = game.tick
---         if game.tick - storage.last_warp > 60 * 10 then
---             storage.last_warp_count = 0
---             game.print({"wn.player-warp-1", player_name})
---         elseif storage.last_warp_count < count then
---             storage.last_warp_count = storage.last_warp_count + 1
---             game.print({"wn.player-warp-2", player_name, storage.last_warp_count})
---         else
---             game.print({"wn.player-warp-3", player_name})
---             run_reset()
---         end
---     end
--- end)
-
 script.on_nth_tick(60 * 60 * 60, function()
     -- 奖金发放 60分钟一次
     local salary = storage.run;
@@ -711,24 +664,6 @@ script.on_nth_tick(60 * 60 * 60, function()
     end
     game.print({"wn.give-salary", salary})
 end)
-
--- script.on_nth_tick(60 * 60 * 180, function()
---     -- 修改游戏运行速度
---     if not storage.speed_penalty_enabled then
---         return
---     end
-
---     local time_played = game.tick - storage.run_start_tick
-
---     local game_speed = 60 * 60 * 60 * 24 * storage.speed_penalty_day / (1 + time_played)
---     game_speed = math.min(game_speed, 1)
---     game_speed = math.max(game_speed, 0.125)
-
---     if game.speed < 1 then
---         game.speed = game_speed
---         game.print({"wn.game-speed-penalty", game_speed})
---     end
--- end)
 
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
     -- 平台上限
