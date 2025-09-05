@@ -96,7 +96,6 @@ local function player_reset(player)
     end
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    local character = player.character or prototypes.get_entity_filtered()
     local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
         1)
     player.teleport(pos, game.surfaces.nauvis)
@@ -391,17 +390,7 @@ local function run_reset()
     -- 重置玩家
     for _, player in pairs(game.players) do
         player_reset(player)
-        if not player.surface.platform then
-            player.character.die()
-        end
     end
-
-    -- -- 召回玩家到母星
-    -- for _, player in pairs(game.players) do
-    --     local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
-    --         {storage.respawn_x, storage.respawn_y}, 0, 1)
-    --     player.teleport(pos, game.surfaces.nauvis)
-    -- end
 
     -- change_seed()
     -- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
