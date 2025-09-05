@@ -238,6 +238,28 @@ local function random_nature()
 end
 
 -- 创建随机表面
+script.on_event(defines.events.on_surface_created, function(event)
+    local surface = game.get_surface(event.surface_index)
+    if not surface then
+        return
+    end
+
+    local mgs = surface.map_gen_settings
+    mgs.seed = math.random(1, 4294967295)
+
+    local platform = surface.platform
+    if platform then
+        local size = storage.max_platform_size
+        size = math.max(size, 96)
+        mgs.width = size
+        mgs.height = size
+        game.print(storage.max_platform_size)
+    else
+    end
+    surface.map_gen_settings = mgs
+end)
+
+-- 创建随机表面
 script.on_event(defines.events.on_surface_cleared, function(event)
 
     local surface = game.get_surface(event.surface_index)
