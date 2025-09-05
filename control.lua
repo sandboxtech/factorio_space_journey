@@ -392,6 +392,13 @@ local function run_reset()
         player_reset(player)
     end
 
+    -- -- 召回玩家到母星
+    -- for _, player in pairs(game.players) do
+    --     local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
+    --         {storage.respawn_x, storage.respawn_y}, 0, 1)
+    --     player.teleport(pos, game.surfaces.nauvis)
+    -- end
+
     -- change_seed()
     -- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
     game.surfaces["nauvis"].clear(true)
