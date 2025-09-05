@@ -96,9 +96,9 @@ local function player_reset(player)
     end
     -- player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    -- print(player)
-    local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
-        {storage.respawn_x, storage.respawn_y}, 0, 1)
+    local character = player.character or prototypes.get_entity_filtered()
+    local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
+        1)
     player.teleport(pos, game.surfaces.nauvis)
 end
 
@@ -180,7 +180,7 @@ local function nauvis_reset()
         type = "market"
     }
 
-    if #markets ~= 2 then
+    if table_size(markets) ~= 2 then
         game.print({"wn.market-not-found"})
         return
     end
@@ -301,8 +301,14 @@ script.on_event(defines.events.on_surface_cleared, function(event)
             mgs.autoplace_controls[res].frequency = random_frequency()
         end
 
+        mgs.autoplace_controls['nauvis_cliff'].richness = random_nature()
         mgs.autoplace_controls['nauvis_cliff'].frequency = random_nature()
         mgs.autoplace_controls['nauvis_cliff'].size = random_nature()
+
+        mgs.autoplace_controls['starting_area_moisture'].richness = random_nature()
+        mgs.autoplace_controls['starting_area_moisture'].frequency = random_nature()
+        mgs.autoplace_controls['starting_area_moisture'].size = random_nature()
+
     end
 
     if surface == game.surfaces.vulcanus then
@@ -382,6 +388,14 @@ local function run_reset()
     storage.mining_current = 0
     storage.mining_needed = math.min(100, math.max(10, storage.run))
 
+    -- 重置玩家
+    for _, player in pairs(game.players) do
+        player_reset(player)
+        if not player.surface.platform then
+            player.character.die()
+        end
+    end
+
     -- -- 召回玩家到母星
     -- for _, player in pairs(game.players) do
     --     local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
@@ -456,13 +470,6 @@ local function run_reset()
     -- 更新UI信息
     players_gui()
 
-    -- 重置玩家
-    for _, player in pairs(game.players) do
-        player_reset(player)
-        if not player.surface.platform then
-            player.character.die()
-        end
-    end
 end
 
 -- 第一次运行场景时触发
@@ -498,14 +505,9 @@ end)
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
 
-    if table_size(game.connected_players <= 1) then
+    if table_size(game.connected_players) <= 1 then
         for _, player in pairs(game.players) do
             player.clear_console()
-            -- for _, blueprint in pairs(player.blueprints) do
-            --     if blueprint.valid and blueprint.valid_for_write then 
-            --         blueprint.clear_blueprint() 
-            --     end
-            -- end
         end
     end
 
