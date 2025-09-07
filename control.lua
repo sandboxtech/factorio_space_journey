@@ -12,9 +12,9 @@ local edge = 'solar-system-edge'
 local shattered_planet = 'shattered-planet'
 
 local normal = 'normal'
--- local uncommon = 'uncommon'
+local uncommon = 'uncommon'
 local rare = 'rare'
--- local epic = 'epic'
+local epic = 'epic'
 local legendary = 'legendary'
 local not_admin_text = {"wn.permission-denied"}
 
@@ -147,8 +147,6 @@ end
 -- 重置母星
 local function nauvis_reset()
 
-    local nauvis = game.surfaces.nauvis
-
     -- 太阳能
     create_entity('solar-panel', -4.5, -14.5)
     create_entity('solar-panel', 4.5, -14.5)
@@ -170,8 +168,6 @@ local function nauvis_reset()
     create_entity('market', -2, -12)
     create_entity('market', 1, -12)
 
-    local nauvis = game.surfaces.nauvis
-    nauvis.peaceful_mode = storage.run <= 1
     local markets = nauvis.find_entities_filtered {
         area = {{-32, -32}, {32, 32}},
         type = "market"
@@ -181,8 +177,7 @@ local function nauvis_reset()
         game.print({"wn.market-not-found"})
         return
     end
-
-    -- 菜市场
+    -- 菜市场--[item=fluoroketone-cold-barrel]
     local market = markets[1]
     market.clear_market_items()
     for _, item in pairs({'wood', 'raw-fish', 'biter-egg', 'pentapod-egg', 'yumako', 'jellynut'}) do
@@ -201,7 +196,8 @@ local function nauvis_reset()
     -- 矿市场
     local market = markets[2]
     market.clear_market_items()
-    for _, item in pairs({'coal', 'stone', 'iron-ore', 'copper-ore', 'uranium-ore', 'tungsten-ore', 'scrap'}) do
+    for _, item in pairs({'coal', 'stone', 'iron-ore', 'copper-ore', 'uranium-ore', 'tungsten-ore', 'holmium-ore',
+                          'lithium'}) do
         market.add_market_item {
             price = {{
                 name = 'coin',
@@ -267,10 +263,9 @@ script.on_event(defines.events.on_surface_created, function(event)
     local platform = surface.platform
     if platform then
         local size = storage.max_platform_size
-        size = math.max(size, 192)
+        size = math.max(size, 96)
         mgs.width = size
         mgs.height = 512
-    else
     end
     surface.map_gen_settings = mgs
 end)
@@ -280,6 +275,12 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     local surface = game.get_surface(event.surface_index)
     if not surface then
+        return
+    end
+
+    -- 跳过平台
+    local platform = surface.platform
+    if platform then
         return
     end
 
@@ -307,31 +308,23 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     end
 
     if not storage.radius then
-        storage.radius = 1024
+        storage.radius = 2048
     end
     -- 刷新星球半径
     local r = storage.radius * random_exp(3)
     r = math.max(256, r)
     r = math.min(4096, r)
     if surface == game.surfaces.nauvis then
-        r = r * 2 -- 母星更大？
+        r = r * 1.5 -- 母星更大？
     end
     storage.radius_of[surface.name] = r
 
-    -- 太空
-    local platform = surface.platform
-    if platform then
-        local size = storage.max_platform_size
-        size = math.max(size, 96)
-        mgs.width = size
-        mgs.height = size
-    else
-        mgs.width = r * 2
-        mgs.height = r * 2
-    end
+    mgs.width = r * 2 + 32
+    mgs.height = r * 2 + 32
 
     -- 母星
     if surface == game.surfaces.nauvis then
+        surface.peaceful_mode = storage.run <= 1 or math.random(1, 3) == 1
 
         for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore'}) do
             mgs.autoplace_controls[res].size = random_size()
@@ -385,6 +378,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     -- 草星
     if surface == game.surfaces.gleba then
+        surface.peaceful_mode = storage.run <= 10 or math.random(1, 2) == 1
+
         mgs.autoplace_controls['gleba_stone'].richness = random_richness()
 
         mgs.autoplace_controls['gleba_enemy_base'].richness = math.random() * 6
@@ -512,8 +507,8 @@ local function run_reset()
     game.forces.enemy.reset_evolution()
     game.map_settings.enemy_expansion.enabled = false
     game.map_settings.pollution.enabled = true
-    game.map_settings.pollution.ageing = readable(random_exp(4))
-    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(4))
+    game.map_settings.pollution.ageing = readable(random_exp(3))
+    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(3))
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.technology_price_multiplier = readable(random_exp(4))
@@ -523,13 +518,18 @@ local function run_reset()
     storage.solar_power_multiplier = readable(random_exp(4))
     storage.max_platform_count = 1 -- math.random(1, 6)
     if storage.run == 0 then
-        storage.max_platform_size = 100
+        storage.max_platform_size = 50
     elseif storage.run <= 10 then
-        storage.max_platform_size = 200 * storage.run
+        storage.max_platform_size = 100 * storage.run
     elseif storage.run <= 100 then
         storage.max_platform_size = 2000 + 10 * storage.run
     else
         storage.max_platform_size = math.max(3000 + storage.run, storage.run * 2)
+    end
+
+    -- command
+    if storage.min_platform_size then
+        storage.max_platform_size = math.max(storage.min_platform_size, storage.max_platform_size)
     end
 
     -- 初始赠送科技
@@ -723,12 +723,12 @@ script.on_event(defines.events.on_research_finished, function(event)
             queue[table_size(queue) + 1] = research
             game.forces.player.research_queue = queue
         end
-    end
 
-    if not storage.statistics[research_name] then
-        storage.statistics[research_name] = 1
-    else
-        storage.statistics[research_name] = storage.statistics[research_name] + 1
+        if not storage.statistics[research_name] then
+            storage.statistics[research_name] = 1
+        else
+            storage.statistics[research_name] = storage.statistics[research_name] + 1
+        end
     end
     players_gui()
 end)
