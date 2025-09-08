@@ -43,12 +43,12 @@ local function player_gui(player)
         -- sprite = "entity/market",
         name = "statistics",
         tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run},
-                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
-                    make_tech('chemical-science-pack'), make_tech('production-science-pack'),
-                    make_tech('utility-science-pack'), make_tech('space-science-pack'),
-                    make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
-                    make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
-                    make_tech('promethium-science-pack')},
+        --    {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
+        --     make_tech('chemical-science-pack'), make_tech('production-science-pack'),
+        --     make_tech('utility-science-pack'), make_tech('space-science-pack'),
+        --     make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
+        --     make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
+        --     make_tech('promethium-science-pack')},
                    {"", "\n", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
                    {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
                     make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
@@ -72,7 +72,7 @@ local function player_gui(player)
                    {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
                    {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
                    {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
-                   {"wn.galaxy-trait-solar_power_multiplier", storage.solar_power_multiplier}}
+                   {"wn.galaxy-trait-solar_power_multiplier", storage.solar_power_multiplier}, {"wn.galaxy-trait-more"}}
     }
 end
 
@@ -167,6 +167,8 @@ local function nauvis_reset()
     -- 市场
     create_entity('market', -2, -12)
     create_entity('market', 1, -12)
+
+    local nauvis = game.surfaces.nauvis
 
     local markets = nauvis.find_entities_filtered {
         area = {{-32, -32}, {32, 32}},
@@ -378,7 +380,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     -- 草星
     if surface == game.surfaces.gleba then
-        surface.peaceful_mode = storage.run <= 10 or math.random(1, 2) == 1
+        -- surface.peaceful_mode = storage.run <= 10 or math.random(1, 2) == 1
+        surface.peaceful_mode = true
 
         mgs.autoplace_controls['gleba_stone'].richness = random_richness()
 
@@ -440,7 +443,7 @@ local function run_reset()
 
         for _, player in pairs(game.players) do
             if player.surface and player.surface.platform and player.character and player.character.die then
-                player.character.die()
+                player.character.die() -- die?
                 if player.connected then
                     if not storage.player_success_count[player.name] then
                         storage.player_success_count[player.name] = 1
@@ -512,7 +515,7 @@ local function run_reset()
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.technology_price_multiplier = readable(random_exp(4))
-    game.difficulty_settings.spoil_time_modifier = readable(random_exp(4))
+    game.difficulty_settings.spoil_time_modifier = readable(0.2 + random_exp(4))
 
     -- 刷新星系参数
     storage.solar_power_multiplier = readable(random_exp(4))
@@ -587,7 +590,15 @@ end)
 
 script.on_event(defines.events.on_gui_click, function(event)
     if event.element.name == "suicide" then
+        -- 紫砂
     end
+end)
+
+script.on_event(defines.events.on_player_left_game, function(event)
+    if not event.player then
+        return
+    end
+    event.player.gui.top.clear()
 end)
 
 -- 玩家进入游戏
@@ -625,6 +636,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     game.print(welcome)
 end)
 
+-- 清空表面
 script.on_event(defines.events.on_pre_surface_cleared, function(event)
 
 end)
@@ -740,6 +752,14 @@ commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
         run_reset()
     else
         player.print(not_admin_text)
+    end
+end)
+
+-- 自杀
+commands.add_command("suiside", {"wn.suicide-help"}, function(command)
+    local player = game.get_player(command.player_index)
+    if player.character then
+        player.character.die()
     end
 end)
 
