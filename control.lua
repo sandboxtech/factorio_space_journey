@@ -4,6 +4,7 @@
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
+local nauvis = 'nauvis'
 local vulcanus = 'vulcanus'
 local fulgora = 'fulgora'
 local gleba = 'gleba'
@@ -217,7 +218,7 @@ end
 local function readable(x)
     if x < 0.1 then
         return math.ceil(x * 100) * 0.01
-    elseif x < 1 then
+    elseif x < 3 then
         return math.floor(x * 10) * 0.1
     elseif x < 10 then
         return math.floor(x)
@@ -310,7 +311,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     end
 
     if not storage.radius then
-        storage.radius = 2048
+        storage.radius = 1024
     end
     -- 刷新星球半径
     local r = storage.radius * random_exp(3)
@@ -443,7 +444,7 @@ local function run_reset()
 
         for _, player in pairs(game.players) do
             if player.surface and player.surface.platform and player.character and player.character.die then
-                player.character.die() -- die?
+                -- player.character.die() -- die?
                 if player.connected then
                     if not storage.player_success_count[player.name] then
                         storage.player_success_count[player.name] = 1
@@ -538,9 +539,14 @@ local function run_reset()
     -- 初始赠送科技
     local force = game.forces.player
     if storage.run >= 1 then
-        force.technologies['oil-processing'].researched = true
-        force.technologies['space-platform'].researched = true
-        force.technologies['space-science-pack'].researched = true
+        -- force.technologies['oil-processing'].researched = true
+        -- force.technologies['space-platform'].researched = true
+        -- force.technologies['space-science-pack'].researched = true
+        force.unlock_space_location(nauvis)
+        force.unlock_space_location(vulcanus)
+        force.unlock_space_location(gleba)
+        force.unlock_space_location(fulgora)
+        force.unlock_space_location(aquilo)
     end
 
     -- local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
