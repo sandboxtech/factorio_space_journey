@@ -734,6 +734,7 @@ script.on_event(defines.events.on_research_finished, function(event)
             local queue = game.forces.player.research_queue
             queue[table_size(queue) + 1] = research
             game.forces.player.research_queue = queue
+            game.print({'wx.start-tech', research.name})
         end
 
         if not storage.statistics[research_name] then
