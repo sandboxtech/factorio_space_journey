@@ -50,7 +50,7 @@ local function player_gui(player)
         --     make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
         --     make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
         --     make_tech('promethium-science-pack')},
-                   {"", "\n", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
+                   {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
                    {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
                     make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
                     make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
