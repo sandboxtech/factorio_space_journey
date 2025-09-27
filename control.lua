@@ -36,20 +36,21 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-info",
         -- sprite = "item/raw-fish",
         name = "info",
-        tooltip = {"wn.introduction", storage.mining_needed}
+        tooltip = {"wn.introduction", storage.warp_minutes_initial, storage.warp_minutes_per_tech,
+                   storage.warp_minutes_per_rocket}
     }
     player.gui.top.add {
         type = "sprite-button",
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run},
-        --    {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
-        --     make_tech('chemical-science-pack'), make_tech('production-science-pack'),
-        --     make_tech('utility-science-pack'), make_tech('space-science-pack'),
-        --     make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
-        --     make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
-        --     make_tech('promethium-science-pack')},
+        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run_auto, storage.run_perfect},
+                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
+                    make_tech('chemical-science-pack'), make_tech('production-science-pack'),
+                    make_tech('utility-science-pack'), make_tech('space-science-pack'),
+                    make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
+                    make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
+                    make_tech('promethium-science-pack')},
                    {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
                    {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
                     make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
@@ -101,7 +102,7 @@ local function player_reset(player)
     if game.tick - player.last_online > 48 * hour_to_tick then
         -- pass
     end
-    -- player.clear_items_inside() -- 清空玩家
+    player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
     local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
         1)
@@ -147,71 +148,7 @@ end
 
 -- 重置母星
 local function nauvis_reset()
-
-    -- 太阳能
-    create_entity('solar-panel', -4.5, -14.5)
-    create_entity('solar-panel', 4.5, -14.5)
-    create_entity('solar-panel', -1.5, -14.5)
-    create_entity('solar-panel', 1.5, -14.5)
-    create_entity('solar-panel', -4.5, -17.5)
-    create_entity('solar-panel', 4.5, -17.5)
-    create_entity('solar-panel', -1.5, -17.5)
-    create_entity('solar-panel', 1.5, -17.5)
-
-    create_entity('laser-turret', 4, -10)
-    create_entity('laser-turret', -4, -10)
-    create_entity('substation', 6, -12)
-    create_entity('substation', -6, -12)
-    create_entity('accumulator', 4, -12)
-    create_entity('accumulator', -4, -12)
-
-    -- 市场
-    create_entity('market', -2, -12)
-    create_entity('market', 1, -12)
-
-    local nauvis = game.surfaces.nauvis
-
-    local markets = nauvis.find_entities_filtered {
-        area = {{-32, -32}, {32, 32}},
-        type = "market"
-    }
-
-    if table_size(markets) ~= 2 then
-        game.print({"wn.market-not-found"})
-        return
-    end
-    -- 菜市场--[item=fluoroketone-cold-barrel]
-    local market = markets[1]
-    market.clear_market_items()
-    for _, item in pairs({'wood', 'raw-fish', 'biter-egg', 'pentapod-egg', 'yumako', 'jellynut'}) do
-        market.add_market_item {
-            price = {{
-                name = 'coin',
-                count = 1
-            }},
-            offer = {
-                type = "give-item",
-                item = item
-            }
-        }
-    end
-
-    -- 矿市场
-    local market = markets[2]
-    market.clear_market_items()
-    for _, item in pairs({'coal', 'stone', 'iron-ore', 'copper-ore', 'uranium-ore', 'tungsten-ore', 'holmium-ore',
-                          'lithium'}) do
-        market.add_market_item {
-            price = {{
-                name = 'coin',
-                count = 1
-            }},
-            offer = {
-                type = "give-item",
-                item = item
-            }
-        }
-    end
+    create_entity('rocket-silo', 5, 5)
 end
 
 -- 数字格式
@@ -243,7 +180,7 @@ local function random_size()
 end
 
 local function random_richness()
-    return readable(0.1 + random_exp(10) * storage.richness)
+    return readable(0.1 + random_exp(8) * storage.richness)
 end
 
 local function random_nature()
@@ -327,7 +264,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     -- 母星
     if surface == game.surfaces.nauvis then
-        surface.peaceful_mode = storage.run <= 1 or math.random(1, 3) == 1
+        surface.peaceful_mode = false
 
         for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil', 'uranium-ore'}) do
             mgs.autoplace_controls[res].size = random_size()
@@ -381,8 +318,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 
     -- 草星
     if surface == game.surfaces.gleba then
-        -- surface.peaceful_mode = storage.run <= 10 or math.random(1, 2) == 1
-        surface.peaceful_mode = true
+        surface.peaceful_mode = false
 
         mgs.autoplace_controls['gleba_stone'].richness = random_richness()
 
@@ -424,16 +360,22 @@ script.on_event(defines.events.on_surface_cleared, function(event)
 end)
 
 -- 跃迁
-local function run_reset()
-
+local function run_reset(is_perfect)
     storage.run = storage.run + 1
+    if is_perfect then
+        storage.run_perfect = storage.run_perfect + 1
+    else
+        storage.run_auto = storage.run_auto + 1
+    end
+
+    storage.warp_minutes_total = storage.warp_minutes_initial
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
     -- 更新主线任务
-    storage.mining_current = 0
-    storage.mining_needed = math.min(100, math.max(10, storage.run))
+    -- storage.mining_current = 0
+    -- storage.mining_needed = math.min(100, math.max(10, storage.run))
 
-    if storage.run >= 1 then
+    if storage.run >= 1 and is_perfect then
         -- 统计玩家
         if not storage.player_failure_count then
             storage.player_failure_count = {}
@@ -443,43 +385,42 @@ local function run_reset()
         end
 
         for _, player in pairs(game.players) do
-            if player.surface and player.surface.platform and player.character and player.character.die then
-                -- player.character.die() -- die?
-                if player.connected then
-                    if not storage.player_success_count[player.name] then
-                        storage.player_success_count[player.name] = 1
-                    else
-                        storage.player_success_count[player.name] = storage.player_success_count[player.name] + 1
-                    end
-                    game.print({"wn.player-success", player.name})
+            if player.connected then
+                if not storage.player_success_count[player.name] then
+                    storage.player_success_count[player.name] = 1
+                else
+                    storage.player_success_count[player.name] = storage.player_success_count[player.name] + 1
                 end
-            else
-                if player.connected then
-                    if not storage.player_failure_count[player.name] then
-                        storage.player_failure_count[player.name] = 1
-                    else
-                        storage.player_failure_count[player.name] = storage.player_failure_count[player.name] + 1
-                    end
-                    game.print({"wn.player-failure", player.name})
-                end
+                game.print({"wn.player-success", player.name})
             end
         end
     end
 
     -- 重置玩家
     for _, player in pairs(game.players) do
+        if player.surface and not player.surface.platform and player.character and player.character.die then
+            player.character.die() -- die?
+        else
+            local inventory = player.get_inventory(defines.inventory.character_main).is_empty()
+
+            if inventory.is_empty() then
+                player.insert {
+                    name = "processing-unit",
+                    count = 100
+                }
+                player.insert {
+                    name = "low-density-structure",
+                    count = 100
+                }
+                player.insert {
+                    name = "rocket-fuel",
+                    count = 100
+                }
+            end
+        end
         player_reset(player)
     end
 
-    -- -- 召回玩家到母星
-    -- for _, player in pairs(game.players) do
-    --     local pos = game.surfaces.nauvis.find_non_colliding_position(player.character,
-    --         {storage.respawn_x, storage.respawn_y}, 0, 1)
-    --     player.teleport(pos, game.surfaces.nauvis)
-    -- end
-
-    -- change_seed()
-    -- We clear the main surfaces instead of deleting them because the seed can't be changed if they are deleted..
     game.surfaces["nauvis"].clear(true)
     if game.surfaces["vulcanus"] ~= nil then
         game.surfaces["vulcanus"].clear(true)
@@ -503,8 +444,8 @@ local function run_reset()
 
     -- 重置科技
 
-    game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
-                math.floor((game.tick % min_to_tick) / min_to_tick)})
+    -- game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
+    --             math.floor((game.tick % min_to_tick) / min_to_tick)})
     game.reset_time_played()
 
     -- 母星污染
@@ -516,19 +457,19 @@ local function run_reset()
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.technology_price_multiplier = readable(random_exp(4))
-    game.difficulty_settings.spoil_time_modifier = readable(0.2 + random_exp(4))
+    game.difficulty_settings.spoil_time_modifier = readable(0.3 + random_exp(4))
 
     -- 刷新星系参数
     storage.solar_power_multiplier = readable(random_exp(4))
-    storage.max_platform_count = 1 -- math.random(1, 6)
-    if storage.run == 0 then
+    -- storage.max_platform_count = 1 -- math.random(1, 6)
+    if storage.run_perfect == 0 then
         storage.max_platform_size = 50
-    elseif storage.run <= 10 then
-        storage.max_platform_size = 100 * storage.run
-    elseif storage.run <= 100 then
-        storage.max_platform_size = 2000 + 10 * storage.run
+    elseif storage.run_perfect <= 10 then
+        storage.max_platform_size = 100 * storage.run_perfect
+    elseif storage.run_perfect <= 100 then
+        storage.max_platform_size = 2000 + 10 * storage.run_perfect
     else
-        storage.max_platform_size = math.max(3000 + storage.run, storage.run * 2)
+        storage.max_platform_size = math.max(3000 + storage.run_perfect, storage.run_perfect * 2)
     end
 
     -- command
@@ -539,7 +480,8 @@ local function run_reset()
     -- 初始赠送科技
     local force = game.forces.player
     if storage.run >= 1 then
-        -- force.technologies['oil-processing'].researched = true
+
+        force.technologies['oil-processing'].researched = true
         -- force.technologies['space-platform'].researched = true
         -- force.technologies['space-science-pack'].researched = true
         force.unlock_space_location(nauvis)
@@ -549,21 +491,21 @@ local function run_reset()
         force.unlock_space_location(aquilo)
     end
 
-    -- local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
-    --                             'processing-unit-productivity', 'rocket-part-productivity'}
+    local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
+                                'processing-unit-productivity', 'rocket-part-productivity'}
 
-    -- local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
-    --                               'scrap-recycling-productivity'}
+    local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
+                                  'scrap-recycling-productivity'}
 
-    -- for _, techs in pairs({productivity_techs, productivity_techs_2}) do
-    --     for _, tech in pairs(techs) do
-    --         if math.random(10) == 1 then
-    --             force.technologies[tech].researched = true
-    --             force.technologies[tech].level = 100
-    --             break
-    --         end
-    --     end
-    -- end
+    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
+        for _, tech in pairs(techs) do
+            if math.random(10) == 1 then
+                force.technologies[tech].researched = true
+                force.technologies[tech].level = 100
+                break
+            end
+        end
+    end
 
     -- 更新UI信息
     players_gui()
@@ -573,10 +515,17 @@ end
 -- 第一次运行场景时触发
 script.on_init(function()
     game.speed = 1
-    storage.run = -1
+
+    storage.run = -1 -- 总跃迁次数
+    storage.run_auto = -1 -- 自动跃迁次数
+    storage.run_perfect = 0 -- 完美跃迁次数
+
+    storage.warp_minutes_initial = 30 -- 初始时间
+    storage.warp_minutes_per_tech = 10 -- 每个科技增加时间
+    storage.warp_minutes_per_rocket = 1 -- 每个火箭减少时间
 
     storage.respawn_x = 0
-    storage.respawn_y = -5
+    storage.respawn_y = 0
 
     storage.statistics = {}
     storage.statistics_in_run = {}
@@ -591,7 +540,7 @@ script.on_init(function()
     storage.radius = 2048
     storage.radius_of = {}
 
-    run_reset()
+    run_reset(false)
 end)
 
 script.on_event(defines.events.on_gui_click, function(event)
@@ -638,6 +587,27 @@ script.on_event(defines.events.on_player_joined_game, function(event)
         end
     else
         welcome = {"wn.welcome-new-player", player.name}
+        -- [item=processing-unit]
+        -- [item=low-density-structure]
+        -- [item=rocket-fuel]
+        -- [item=space-platform-starter-pack]
+        player.insert {
+            name = "processing-unit",
+            count = 200
+        }
+        player.insert {
+            name = "low-density-structure",
+            count = 200
+        }
+        player.insert {
+            name = "rocket-fuel",
+            count = 200
+        }
+        player.insert {
+            name = "space-platform-starter-pack",
+            count = 1
+        }
+
     end
     game.print(welcome)
 end)
@@ -653,19 +623,19 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     -- local chunk_position = event.position
     local left_top = event.area.left_top
 
-    if surface == game.surfaces.nauvis then
-        -- 母星富矿
-        local ores = game.surfaces[1].find_entities_filtered {
-            area = event.area,
-            name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
-        }
+    -- if surface == game.surfaces.nauvis then
+    --     -- 母星富矿
+    --     local ores = game.surfaces[1].find_entities_filtered {
+    --         area = event.area,
+    --         name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
+    --     }
 
-        if ores then
-            for i, entity in pairs(ores) do
-                entity.amount = (entity.amount + math.random()) * 16 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
-            end
-        end
-    end
+    --     if ores then
+    --         for i, entity in pairs(ores) do
+    --             entity.amount = (entity.amount + math.random()) * 4 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
+    --         end
+    --     end
+    -- end
 
     -- 圆形地图
     local r = storage.radius_of[surface.name]
@@ -704,37 +674,35 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     end
 end)
 
-local function print_mining_productivity_level()
-    game.print({"wn.warp-process", storage.mining_current, storage.mining_needed})
+local function can_reset()
+    return game.forces.player.technologies['promethium-science-pack'].researched
 end
 
-local function can_reset()
-    return storage.mining_current >= storage.mining_needed
+local function get_warp_time_left()
+    local minutes_gone = math.ceil((game.tick - storage.run_start_tick) / min_to_tick)
+    local minutes_left = storage.warp_minutes_total - minutes_gone
+    return minutes_left
 end
+
+local function print_warp_time_left()
+    game.print({'wn.warp-time-left', get_warp_time_left()})
+end
+
+script.on_event(defines.events.on_rocket_launched, function(event)
+    storage.warp_minutes_total = storage.warp_minutes_total - storage.warp_minutes_per_rocket
+    game.print({'wn.warp-time-decrease', storage.warp_minutes_per_rocket, get_warp_time_left()})
+end)
 
 script.on_event(defines.events.on_research_finished, function(event)
 
     local research = event.research
     local research_name = research.name
-    if research_name == "mining-productivity-3" then
-        storage.mining_current = research.level - 1
-        if (not event.by_script) then
-            print_mining_productivity_level()
-        end
-    elseif research_name == "mining-productivity-2" then
-        storage.mining_current = 2
-        if (not event.by_script) then
-            print_mining_productivity_level()
-        end
-
-    elseif research_name == "mining-productivity-1" then
-        storage.mining_current = 1
-        if (not event.by_script) then
-            print_mining_productivity_level()
-        end
-    end
 
     if not event.by_script then
+        -- 增加时间
+        storage.warp_minutes_total = storage.warp_minutes_total + storage.warp_minutes_per_tech
+        game.print({'wn.warp-time-increase', storage.warp_minutes_per_tech, get_warp_time_left()})
+
         -- 自动添加无限科技
         if research.level > 1 then
             local queue = game.forces.player.research_queue
@@ -753,10 +721,20 @@ script.on_event(defines.events.on_research_finished, function(event)
 end)
 
 -- 手动重置
-commands.add_command("run_reset", {"wn.run-reset-help"}, function(command)
+commands.add_command("run_auto", {"wn.run-reset-help"}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
-        run_reset()
+        run_reset(false)
+    else
+        player.print(not_admin_text)
+    end
+end)
+
+-- 手动重置
+commands.add_command("run_perfect", {"wn.run-reset-help"}, function(command)
+    local player = game.get_player(command.player_index)
+    if not player or player.admin then
+        run_reset(true)
     else
         player.print(not_admin_text)
     end
@@ -770,19 +748,35 @@ commands.add_command("suiside", {"wn.suicide-help"}, function(command)
     end
 end)
 
-script.on_nth_tick(60 * 60 * 60, function()
-    -- 奖金发放 60分钟一次
-    local salary = storage.run;
-    if salary <= 0 then
-        salary = 1
+-- 查询剩余时间
+commands.add_command("time_left", {"wn.suicide-help"}, function(command)
+    local player = game.get_player(command.player_index)
+    if player.character then
+        game.print({'wn.warp-time-left', get_warp_time_left()})
     end
-    for _, player in pairs(game.connected_players) do -- Table iteration.
-        player.insert {
-            name = "coin",
-            count = salary
-        }
+end)
+
+script.on_nth_tick(60 * 60, function()
+    -- 通知 1分钟一次
+    local minutes_left = get_warp_time_left()
+
+    if minutes_left < 60 then
+        if (minutes_left < 10) then
+            if minutes_left < 0 then
+                run_reset(false)
+            else
+                print_warp_time_left()
+            end
+        else
+            if minutes_left % 10 == 0 then
+                print_warp_time_left()
+            end
+        end
+    else
+        if minutes_left % 60 == 0 then
+            print_warp_time_left()
+        end
     end
-    game.print({"wn.give-salary", salary})
 end)
 
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
@@ -822,7 +816,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
     -- 前往下一个地点
     if name == edge then
         if (can_reset()) then
-            run_reset()
+            run_reset(true)
         end
     end
 end)
