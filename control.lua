@@ -36,8 +36,7 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-info",
         -- sprite = "item/raw-fish",
         name = "info",
-        tooltip = {"wn.introduction", storage.warp_minutes_initial, storage.warp_minutes_per_tech,
-                   storage.warp_minutes_per_rocket}
+        tooltip = {"wn.introduction", storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket}
     }
     player.gui.top.add {
         type = "sprite-button",
@@ -50,7 +49,7 @@ local function player_gui(player)
                     make_tech('utility-science-pack'), make_tech('space-science-pack'),
                     make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
                     make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
-                    make_tech('promethium-science-pack')},
+                    make_tech('promethium-science-pack'), "\n"},
                    {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
                    {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
                     make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
@@ -141,14 +140,13 @@ local function create_entity(name, x, y)
         },
         force = 'player'
     }
-    -- 不可摧毁
     entity.minable = false
     entity.destructible = false
 end
 
 -- 重置母星
 local function nauvis_reset()
-    create_entity('rocket-silo', 5, 5)
+    -- create_entity('rocket-silo', 5, 5)
 end
 
 -- 数字格式
@@ -386,12 +384,18 @@ local function run_reset(is_perfect)
 
         for _, player in pairs(game.players) do
             if player.connected then
-                if not storage.player_success_count[player.name] then
-                    storage.player_success_count[player.name] = 1
+
+                if player.surface.platform then
+                    game.print({"wn.player-success", player.name})
+                    if not storage.player_success_count[player.name] then
+                        storage.player_success_count[player.name] = 1
+                    else
+                        storage.player_success_count[player.name] = storage.player_success_count[player.name] + 1
+                    end
+
                 else
-                    storage.player_success_count[player.name] = storage.player_success_count[player.name] + 1
+                    game.print({"wn.player-failure", player.name})
                 end
-                game.print({"wn.player-success", player.name})
             end
         end
     end
@@ -515,6 +519,7 @@ end
 -- 第一次运行场景时触发
 script.on_init(function()
     game.speed = 1
+    storage.max_platform_count = 1
 
     storage.run = -1 -- 总跃迁次数
     storage.run_auto = -1 -- 自动跃迁次数
@@ -629,10 +634,9 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     --         area = event.area,
     --         name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
     --     }
-
     --     if ores then
     --         for i, entity in pairs(ores) do
-    --             entity.amount = (entity.amount + math.random()) * 4 -- math.min(4294967295, entity.amount * 10000 + 10000 * math.random())
+    --             entity.amount = (entity.amount + math.random()) * 4
     --         end
     --     end
     -- end
@@ -704,7 +708,7 @@ script.on_event(defines.events.on_research_finished, function(event)
         game.print({'wn.warp-time-increase', storage.warp_minutes_per_tech, get_warp_time_left()})
 
         -- 自动添加无限科技
-        if research.level > 1 then
+        if research.level > 5 then
             local queue = game.forces.player.research_queue
             queue[table_size(queue) + 1] = research
             game.forces.player.research_queue = queue
