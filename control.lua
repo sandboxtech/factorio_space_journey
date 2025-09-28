@@ -29,6 +29,11 @@ end
 
 -- 左上角信息内容
 local function player_gui(player)
+
+    if not storage.current_hostname then
+        storage.current_hostname = 'dx.moe.xin:37001'
+    end
+
     player.gui.top.clear()
     player.gui.top.add {
         type = "sprite-button",
@@ -36,7 +41,8 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-info",
         -- sprite = "item/raw-fish",
         name = "info",
-        tooltip = {"wn.introduction", storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket}
+        tooltip = {"wn.introduction", storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket,
+                   storage.current_hostname}
     }
     player.gui.top.add {
         type = "sprite-button",
@@ -250,8 +256,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     end
     -- 刷新星球半径
     local r = storage.radius * random_exp(3)
-    r = math.max(256, r)
-    r = math.min(4096, r)
+    r = math.max(192, r)
+    r = math.min(2048, r)
     if surface == game.surfaces.nauvis then
         r = r * 1.5 -- 母星更大？
     end
@@ -366,7 +372,6 @@ local function run_reset(is_perfect)
         storage.run_auto = storage.run_auto + 1
     end
 
-    storage.warp_minutes_total = storage.warp_minutes_initial
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
     -- 更新主线任务
@@ -460,8 +465,15 @@ local function run_reset(is_perfect)
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(3))
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
-    game.difficulty_settings.technology_price_multiplier = readable(random_exp(4))
     game.difficulty_settings.spoil_time_modifier = readable(0.3 + random_exp(4))
+    game.difficulty_settings.technology_price_multiplier = readable(random_exp(3))
+
+    if not storage.warp_minutes_per_tech_multiplayer then
+        storage.warp_minutes_per_tech_multiplayer = 10
+    end
+    storage.warp_minutes_per_tech = math.ceil(storage.warp_minutes_per_tech_multiplayer *
+                                                  math.sqrt(game.difficulty_settings.technology_price_multiplier))
+    storage.warp_minutes_total = math.max(3, 3 * storage.warp_minutes_per_tech)
 
     -- 刷新星系参数
     storage.solar_power_multiplier = readable(random_exp(4))
@@ -476,15 +488,34 @@ local function run_reset(is_perfect)
         storage.max_platform_size = math.max(3000 + storage.run_perfect, storage.run_perfect * 2)
     end
 
-    -- command
-    if storage.min_platform_size then
-        storage.max_platform_size = math.max(storage.min_platform_size, storage.max_platform_size)
+    -- 初始赠送科技
+    local function research_recursive(name)
+        game.forces.player.technologies[name].research_recursive()
+        game.print({"wn.free-tech", name})
     end
 
-    -- 初始赠送科技
+    -- local tech_price = game.difficulty_settings.technology_price_multiplier
+    -- if tech_price >= 20 then
+    --     research_recursive('space-science-pack')
+    --     research_recursive('production-science-pack')
+    --     research_recursive('utility-science-pack')
+    -- elseif tech_price >= 10 then
+    --     research_recursive('space-science-pack')
+    --     research_recursive('production-science-pack')
+    -- elseif tech_price >= 5 then
+    --     research_recursive('space-science-pack')
+    -- elseif tech_price >= 2 then
+    --     research_recursive('chemical-science-pack')
+    -- elseif tech_price >= 1 then
+    --     research_recursive('logistic-science-pack')
+    -- elseif tech_price >= 0.5 then
+    --     research_recursive('automation-science-pack')
+    -- elseif tech_price >= 0.2 then
+
+    -- end
+
     local force = game.forces.player
     if storage.run >= 1 then
-
         force.technologies['oil-processing'].researched = true
         -- force.technologies['space-platform'].researched = true
         -- force.technologies['space-science-pack'].researched = true
@@ -493,6 +524,11 @@ local function run_reset(is_perfect)
         force.unlock_space_location(gleba)
         force.unlock_space_location(fulgora)
         force.unlock_space_location(aquilo)
+    end
+
+    if is_perfect then
+        research_recursive('space-science-pack')
+        force.laboratory_productivity_bonus = 2
     end
 
     local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
@@ -525,7 +561,6 @@ script.on_init(function()
     storage.run_auto = -1 -- 自动跃迁次数
     storage.run_perfect = 0 -- 完美跃迁次数
 
-    storage.warp_minutes_initial = 30 -- 初始时间
     storage.warp_minutes_per_tech = 10 -- 每个科技增加时间
     storage.warp_minutes_per_rocket = 1 -- 每个火箭减少时间
 
@@ -693,8 +728,11 @@ local function print_warp_time_left()
 end
 
 script.on_event(defines.events.on_rocket_launched, function(event)
-    storage.warp_minutes_total = storage.warp_minutes_total - storage.warp_minutes_per_rocket
-    game.print({'wn.warp-time-decrease', storage.warp_minutes_per_rocket, get_warp_time_left()})
+    local decrease = math.ceil(get_warp_time_left() * (100 - storage.warp_minutes_per_rocket) / 100)
+    decrease = math.max(1, decrease)
+    decrease = math.min(10, decrease)
+    storage.warp_minutes_total = storage.warp_minutes_total - decrease
+    game.print({'wn.warp-time-rocket', storage.warp_minutes_per_rocket, get_warp_time_left()})
 end)
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -705,7 +743,7 @@ script.on_event(defines.events.on_research_finished, function(event)
     if not event.by_script then
         -- 增加时间
         storage.warp_minutes_total = storage.warp_minutes_total + storage.warp_minutes_per_tech
-        game.print({'wn.warp-time-increase', storage.warp_minutes_per_tech, get_warp_time_left()})
+        game.print({'wn.warp-time-tech', storage.warp_minutes_per_tech, get_warp_time_left()})
 
         -- 自动添加无限科技
         if research.level > 5 then
@@ -756,7 +794,8 @@ end)
 commands.add_command("time_left", {"wn.suicide-help"}, function(command)
     local player = game.get_player(command.player_index)
     if player.character then
-        game.print({'wn.warp-time-left', get_warp_time_left()})
+        local time_left = get_warp_time_left()
+        game.print({'wn.warp-time-left', time_left})
     end
 end)
 
@@ -764,20 +803,22 @@ script.on_nth_tick(60 * 60, function()
     -- 通知 1分钟一次
     local minutes_left = get_warp_time_left()
 
-    if minutes_left < 60 then
+    if minutes_left < 100 then
         if (minutes_left < 10) then
             if minutes_left < 0 then
                 run_reset(false)
             else
                 print_warp_time_left()
+                game.print({'wn.warp-time-warning-2'})
             end
         else
             if minutes_left % 10 == 0 then
                 print_warp_time_left()
+                game.print({'wn.warp-time-warning-1'})
             end
         end
     else
-        if minutes_left % 60 == 0 then
+        if minutes_left % 100 == 0 then
             print_warp_time_left()
         end
     end
