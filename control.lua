@@ -109,9 +109,9 @@ local function player_reset(player)
     end
     player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
-        1)
-    player.teleport(pos, game.surfaces.nauvis)
+    -- local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
+    --     1)
+    -- player.teleport(pos, game.surfaces.nauvis)
 end
 
 -- 开图
@@ -152,7 +152,7 @@ end
 
 -- 重置母星
 local function nauvis_reset()
-    -- create_entity('rocket-silo', 5, 5)
+    create_entity('rocket-silo', 5, 5)
 end
 
 -- 数字格式
@@ -409,25 +409,26 @@ local function run_reset(is_perfect)
     for _, player in pairs(game.players) do
         if player.surface and not player.surface.platform and player.character and player.character.die then
             player.character.die() -- die?
+            player_reset(player)
         else
-            local inventory = player.get_inventory(defines.inventory.character_main).is_empty()
-
-            if inventory.is_empty() then
-                player.insert {
-                    name = "processing-unit",
-                    count = 100
-                }
-                player.insert {
-                    name = "low-density-structure",
-                    count = 100
-                }
-                player.insert {
-                    name = "rocket-fuel",
-                    count = 100
-                }
+            if player.get_inventory then
+                local inventory = player.get_inventory(defines.inventory.character_main)
+                if inventory and inventory.is_empty() then
+                    player.insert {
+                        name = "processing-unit",
+                        count = 100
+                    }
+                    player.insert {
+                        name = "low-density-structure",
+                        count = 100
+                    }
+                    player.insert {
+                        name = "rocket-fuel",
+                        count = 100
+                    }
+                end
             end
         end
-        player_reset(player)
     end
 
     game.surfaces["nauvis"].clear(true)
@@ -596,13 +597,24 @@ script.on_event(defines.events.on_player_left_game, function(event)
     event.player.gui.top.clear()
 end)
 
+local function get_warp_time_left()
+    local minutes_gone = math.ceil((game.tick - storage.run_start_tick) / min_to_tick)
+    local minutes_left = storage.warp_minutes_total - minutes_gone
+    return minutes_left
+end
+
+local function print_warp_time_left()
+    game.print({'wn.warp-time-left', get_warp_time_left()})
+end
+
 -- 玩家进入游戏
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
 
     if table_size(game.connected_players) <= 1 then
         for _, player in pairs(game.players) do
-            player.clear_console()
+            -- player.clear_console()
+            print_warp_time_left()
         end
     end
 
@@ -717,22 +729,12 @@ local function can_reset()
     return game.forces.player.technologies['promethium-science-pack'].researched
 end
 
-local function get_warp_time_left()
-    local minutes_gone = math.ceil((game.tick - storage.run_start_tick) / min_to_tick)
-    local minutes_left = storage.warp_minutes_total - minutes_gone
-    return minutes_left
-end
-
-local function print_warp_time_left()
-    game.print({'wn.warp-time-left', get_warp_time_left()})
-end
-
 script.on_event(defines.events.on_rocket_launched, function(event)
-    local decrease = math.ceil(get_warp_time_left() * (100 - storage.warp_minutes_per_rocket) / 100)
+    local decrease = math.ceil(get_warp_time_left() * (storage.warp_minutes_per_rocket) / 100)
     decrease = math.max(1, decrease)
     decrease = math.min(10, decrease)
     storage.warp_minutes_total = storage.warp_minutes_total - decrease
-    game.print({'wn.warp-time-rocket', storage.warp_minutes_per_rocket, get_warp_time_left()})
+    game.print({'wn.warp-time-rocket', decrease, get_warp_time_left()})
 end)
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -805,7 +807,7 @@ script.on_nth_tick(60 * 60, function()
 
     if minutes_left < 100 then
         if (minutes_left < 10) then
-            if minutes_left < 0 then
+            if minutes_left < 1 then
                 run_reset(false)
             else
                 print_warp_time_left()
