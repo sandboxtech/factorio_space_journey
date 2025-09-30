@@ -25,8 +25,12 @@ local function make_location(name)
     return {"wn.statistics-run-location", storage.statistics[name] or 0, name}
 end
 
-local function make_tech(name)
-    return {"wn.statistics-run-tech", storage.statistics[name] or 0, name}
+local function make_tech(name1)
+    return {"wn.statistics-run-tech", storage.statistics[name1] or 0, name1}
+end
+
+local function make_tech2(name1, name2)
+    return {"wn.statistics-run-tech", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0}
 end
 
 local function make_tech3(name1, name2, name3)
@@ -73,19 +77,18 @@ local function player_gui(player)
         type = "sprite-button",
         sprite = "virtual-signal/signal-science-pack",
         name = "science",
-        tooltip = {"", {"wn.statistics-title-tech"}, {"", -- [item=military-science-pack]
-        make_tech3('automation-science-pack', 'logistic-science-pack', 'chemical-science-pack'),
-                                                      make_tech3('production-science-pack', 'utility-science-pack',
-            'space-science-pack'),
-                                                      make_tech3('metallurgic-science-pack',
-            'agricultural-science-pack', 'electromagnetic-science-pack'),
-                                                      make_tech3('military-science-pack', 'cryogenic-science-pack',
-            'promethium-science-pack'), "\n"}, {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
-                   {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
-                    make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
-                    make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
-                    make_tech('rocket-part-productivity'), make_tech('asteroid-productivity'),
-                    make_tech('scrap-recycling-productivity'), make_tech('research-productivity'), "\n"},
+        tooltip = {"", {"wn.statistics-title-tech"},
+                   {"", make_tech3('automation-science-pack', 'logistic-science-pack', 'chemical-science-pack'),
+                    make_tech3('production-science-pack', 'utility-science-pack', 'space-science-pack'),
+                    make_tech3('metallurgic-science-pack', 'agricultural-science-pack', 'electromagnetic-science-pack'),
+                    make_tech3('military-science-pack', 'cryogenic-science-pack', 'promethium-science-pack'), "\n"},
+                   {"", make_tech2('epic-quality', 'legendary-quality'), "\n"},
+
+                    {"", make_tech3('mining-productivity-3', 'plastic-bar-productivity', 'steel-plate-productivity'),
+                    make_tech3('low-density-structure-productivity', 'rocket-part-productivity', 'processing-unit-productivity'),
+                    make_tech3('metallurgic-science-pack', 'agricultural-science-pack', 'electromagnetic-science-pack'),
+                    make_tech3('rocket-part-productivity', 'asteroid-productivity', 'scrap-recycling-productivity'), "\n"},
+                    make_tech('research-productivity'), "\n"},
 
                    {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
                     make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'),
