@@ -29,6 +29,11 @@ local function make_tech(name)
     return {"wn.statistics-run-tech", storage.statistics[name] or 0, name}
 end
 
+local function make_tech3(name1, name2, name3)
+    return {"wn.statistics-run-tech3", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0, name2,
+            storage.statistics[name3] or 0, name3}
+end
+
 local function try_add_trait(trait)
     if not storage.traits then
         storage.traits = {""}
@@ -68,14 +73,14 @@ local function player_gui(player)
         type = "sprite-button",
         sprite = "virtual-signal/signal-science-pack",
         name = "science",
-        tooltip = {"", {"wn.statistics-title-tech"},
-                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
-                    make_tech('chemical-science-pack'), make_tech('production-science-pack'),
-                    make_tech('utility-science-pack'), make_tech('space-science-pack'),
-                    make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
-                    make_tech('electromagnetic-science-pack'), make_tech('cryogenic-science-pack'),
-                    make_tech('promethium-science-pack'), "\n"},
-                   {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
+        tooltip = {"", {"wn.statistics-title-tech"}, {"", -- [item=military-science-pack]
+        make_tech3('automation-science-pack', 'logistic-science-pack', 'chemical-science-pack'),
+                                                      make_tech3('production-science-pack', 'utility-science-pack',
+            'space-science-pack'),
+                                                      make_tech3('metallurgic-science-pack',
+            'agricultural-science-pack', 'electromagnetic-science-pack'),
+                                                      make_tech3('military-science-pack', 'cryogenic-science-pack',
+            'promethium-science-pack'), "\n"}, {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
                    {"", make_tech('mining-productivity-3'), make_tech('steel-plate-productivity'),
                     make_tech('plastic-bar-productivity'), make_tech('rocket-fuel-productivity'),
                     make_tech('processing-unit-productivity'), make_tech('low-density-structure-productivity'),
