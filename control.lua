@@ -84,16 +84,16 @@ local function player_gui(player)
                     make_tech3('military-science-pack', 'cryogenic-science-pack', 'promethium-science-pack'), "\n"},
                    {"", make_tech2('epic-quality', 'legendary-quality'), "\n"},
 
-                    {"", make_tech3('mining-productivity-3', 'plastic-bar-productivity', 'steel-plate-productivity'),
-                    make_tech3('low-density-structure-productivity', 'rocket-part-productivity', 'processing-unit-productivity'),
+                   {"", make_tech3('mining-productivity-3', 'plastic-bar-productivity', 'steel-plate-productivity'),
+                    make_tech3('low-density-structure-productivity', 'rocket-part-productivity',
+            'processing-unit-productivity'),
                     make_tech3('metallurgic-science-pack', 'agricultural-science-pack', 'electromagnetic-science-pack'),
-                    make_tech3('rocket-part-productivity', 'asteroid-productivity', 'scrap-recycling-productivity'), "\n"},
-                    make_tech('research-productivity'), "\n"},
+                    make_tech3('rocket-part-productivity', 'asteroid-productivity', 'scrap-recycling-productivity'),
+                    "\n"}, make_tech('research-productivity'), "\n"},
 
-                   {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
-                    make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'),
-                    make_tech('electric-weapons-damage-4'), make_tech('artillery-shell-damage-1'),
-                    make_tech('railgun-damage-1'), "\n"}}
+        {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
+         make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'), make_tech('electric-weapons-damage-4'),
+         make_tech('artillery-shell-damage-1'), make_tech('railgun-damage-1'), "\n"}
     }
 
     if not storage.traits then
@@ -144,9 +144,9 @@ local function player_reset(player)
     end
     player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    -- local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
-    --     1)
-    -- player.teleport(pos, game.surfaces.nauvis)
+    local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
+        1)
+    player.teleport(pos, game.surfaces.nauvis)
 end
 
 -- 开图
@@ -413,6 +413,9 @@ local function run_reset(is_perfect)
     end
 
     -- 清除星球前
+    local last_run_ticks = (game.tick - storage.run_start_tick)
+    game.print({"wn.warp-success-time", math.floor(last_run_ticks / hour_to_tick),
+                math.floor(last_run_ticks / min_to_tick)})
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
 
@@ -450,7 +453,7 @@ local function run_reset(is_perfect)
     -- 重置玩家
     for _, player in pairs(game.players) do
         if player.surface and not player.surface.platform and player.character and player.character.die then
-            player.character.die() -- die?
+            -- player.character.die() -- die?
             player_reset(player)
         else
             if player.get_inventory then
@@ -505,8 +508,6 @@ local function run_reset(is_perfect)
 
     -- 重置科技
 
-    game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
-                math.floor((game.tick % min_to_tick) / min_to_tick)})
     game.reset_time_played()
 
     -- 母星污染
@@ -883,6 +884,11 @@ script.on_nth_tick(60 * 60, function()
 
     if minutes_left < 100 then
         if (minutes_left < 10) then
+
+            if storage.warp_minutes_total > 1000 then
+                game.reset_time_played()
+            end
+
             if minutes_left < 1 then
                 run_reset(false)
             else
