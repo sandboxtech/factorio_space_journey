@@ -4,6 +4,7 @@
 local day_to_tick = 5184000
 local hour_to_tick = 216000
 local min_to_tick = 3600
+-- [virtual-signal=signal-hourglass]
 
 local nauvis = 'nauvis'
 local vulcanus = 'vulcanus'
@@ -28,18 +29,28 @@ local function make_tech(name)
     return {"wn.statistics-run-tech", storage.statistics[name] or 0, name}
 end
 
+local function try_add_trait(trait)
+    if not storage.traits then
+        storage.traits = {""}
+    end
+    if table_size(storage.traits) >= 18 then
+        -- factorio limit
+        return
+    end
+    table.insert(storage.traits, trait)
+end
+
 -- 左上角信息内容
 local function player_gui(player)
 
     if not storage.current_hostname then
-        storage.current_hostname = 'dx.moe.xin:37001'
+        storage.current_hostname = 'storage.current_hostname'
     end
-
     player.gui.top.clear()
     player.gui.top.add {
         type = "sprite-button",
         -- sprite = "space-location/solar-system-edge",
-        sprite = "virtual-signal/signal-info",
+        sprite = "virtual-signal/signal-heart",
         -- sprite = "item/raw-fish",
         name = "info",
         tooltip = {"wn.introduction", storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket,
@@ -47,13 +58,17 @@ local function player_gui(player)
     }
     player.gui.top.add {
         type = "sprite-button",
-        sprite = "virtual-signal/signal-heart",
-        -- sprite = "entity/market",
+        sprite = "virtual-signal/signal-star",
         name = "statistics",
         tooltip = {"", {"wn.statistics-title"},
-                   {"wn.statistics-run", math.ceil(game.tick / day_to_tick), storage.run_auto, storage.run_perfect},
+                   {"wn.statistics-run", math.ceil(game.tick / day_to_tick), storage.run_auto, storage.run_perfect}}
+    }
 
-                   {"wn.statistics-title-tech"},
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "virtual-signal/signal-science-pack",
+        name = "science",
+        tooltip = {"", {"wn.statistics-title-tech"},
                    {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
                     make_tech('chemical-science-pack'), make_tech('production-science-pack'),
                     make_tech('utility-science-pack'), make_tech('space-science-pack'),
@@ -71,20 +86,28 @@ local function player_gui(player)
                     make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'),
                     make_tech('electric-weapons-damage-4'), make_tech('artillery-shell-damage-1'),
                     make_tech('railgun-damage-1'), "\n"}}
+    }
 
+    if not storage.traits then
+        storage.traits = {""}
+    end
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "virtual-signal/signal-info",
+        name = "traits",
+        tooltip = storage.traits
     }
 
     player.gui.top.add {
         type = "sprite-button",
-        sprite = "space-location/solar-system-edge",
+        sprite = 'entity/space-platform-hub',
+        -- sprite = "space-location/solar-system-edge",
         name = "galaxy",
         tooltip = {"", {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
                    {"wn.galaxy-trait-platform-size", storage.max_platform_size}, {"wn.galaxy-trait-title"},
-                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
-                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
-                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
-                   {"wn.galaxy-trait-solar_power_multiplier", storage.solar_power_multiplier}, {"wn.galaxy-trait-more"}}
+                   {"wn.galaxy-trait-more"}}
     }
+
 end
 
 local function players_gui()
@@ -193,7 +216,7 @@ end
 
 local function random_nature()
     if not storage.nature then
-        storage.nature = 5
+        storage.nature = 2
     end
     return readable(math.pow(2, (math.random() - math.random()) * storage.nature))
 end
@@ -244,15 +267,16 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     surface.wind_orientation_change = 0.0001 * (0.5 + math.random())
     surface.solar_power_multiplier = storage.solar_power_multiplier
 
-    if math.random(1, 5) == 1 then
-        -- 潮汐锁定，永昼
-        surface.freeze_daytime = true
-        surface.daytime = 0
-    elseif math.random(1, 10) == 1 then
+    if math.random(1, 3) == 1 then
         -- 潮汐锁定，永夜
         surface.freeze_daytime = true
+        surface.daytime = 0
+        try_add_trait({'wn.eternal-night', surface.name})
+    elseif math.random(1, 2) == 1 then
+        -- 潮汐锁定，永昼
+        surface.freeze_daytime = true
         surface.daytime = 0.5
-        surface.solar_power_multiplier = storage.solar_power_multiplier * 0.1
+        try_add_trait({'wn.eternal-day', surface.name})
     end
 
     if not storage.radius then
@@ -281,8 +305,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         end
 
         for _, res in pairs({'water', 'trees', 'enemy-base', 'rocks', 'nauvis_cliff'}) do
-            mgs.autoplace_controls[res].richness = random_richness()
-            mgs.autoplace_controls[res].frequency = random_frequency()
+            mgs.autoplace_controls[res].richness = random_nature()
+            mgs.autoplace_controls[res].frequency = random_nature()
         end
 
         mgs.autoplace_controls['nauvis_cliff'].richness = random_nature()
@@ -380,6 +404,7 @@ local function run_reset(is_perfect)
         storage.run_auto = storage.run_auto + 1
     end
 
+    -- 清除星球前
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
 
@@ -440,6 +465,9 @@ local function run_reset(is_perfect)
         end
     end
 
+    -- 删除星球前
+    storage.traits = {"", {'wn.traits-title'}}
+
     game.surfaces["nauvis"].clear(true)
     if game.surfaces["vulcanus"] ~= nil then
         game.surfaces["vulcanus"].clear(true)
@@ -454,17 +482,23 @@ local function run_reset(is_perfect)
         game.surfaces["aquilo"].clear(true)
     end
 
-    -- 重置玩家势力
-
     local force = game.forces.player
+
+    -- 延续一次研究产能
+    storage.laboratory_productivity_bonus = not force.technologies['research-productivity'].researched and 0 or
+                                                force.technologies['research-productivity'] * 0.1
+    storage.mining_drill_productivity_bonus = not force.technologies['mining-productivity-3'].researched and 0 or
+                                                  force.technologies['mining-productivity-3'] * 0.1
+
+    -- 重置玩家势力
     force.reset()
     force.friendly_fire = true
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 
     -- 重置科技
 
-    -- game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
-    --             math.floor((game.tick % min_to_tick) / min_to_tick)})
+    game.print({"wn.warp-success-time", math.floor(game.tick / hour_to_tick),
+                math.floor((game.tick % min_to_tick) / min_to_tick)})
     game.reset_time_played()
 
     -- 母星污染
@@ -533,7 +567,7 @@ local function run_reset(is_perfect)
         force.technologies['planet-discovery-vulcanus'].researched = true
         force.technologies['planet-discovery-gleba'].researched = true
         force.technologies['planet-discovery-fulgora'].researched = true
-        force.technologies['planet-discovery-aquilo'].researched = true
+        -- force.technologies['planet-discovery-aquilo'].researched = true
         force.unlock_space_location(nauvis)
         force.unlock_space_location(vulcanus)
         force.unlock_space_location(gleba)
@@ -541,26 +575,36 @@ local function run_reset(is_perfect)
         force.unlock_space_location(aquilo)
     end
 
+    try_add_trait({'',
+                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
+                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
+                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier}})
+
+    force.laboratory_productivity_bonus = storage.laboratory_productivity_bonus
+    force.mining_drill_productivity_bonus = storage.mining_drill_productivity_bonus
+    try_add_trait({'', {'wn.productivity_bonus'},
+                   {'wn.mining_drill_productivity_bonus', storage.mining_drill_productivity_bonus},
+                   {'wn.laboratory_productivity_bonus', storage.laboratory_productivity_bonus}})
+
     if is_perfect then
         research_recursive('space-science-pack')
-        force.laboratory_productivity_bonus = 2
     end
 
-    local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
-                                'processing-unit-productivity', 'rocket-part-productivity'}
+    -- local productivity_techs = {'rocket-fuel-productivity', 'low-density-structure-productivity',
+    --                             'processing-unit-productivity', 'rocket-part-productivity'}
 
-    local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
-                                  'scrap-recycling-productivity'}
+    -- local productivity_techs_2 = {'steel-plate-productivity', 'plastic-bar-productivity', 'asteroid-productivity',
+    --                               'scrap-recycling-productivity'}
 
-    for _, techs in pairs({productivity_techs, productivity_techs_2}) do
-        for _, tech in pairs(techs) do
-            if math.random(10) == 1 then
-                force.technologies[tech].researched = true
-                force.technologies[tech].level = 100
-                break
-            end
-        end
-    end
+    -- for _, techs in pairs({productivity_techs, productivity_techs_2}) do
+    --     for _, tech in pairs(techs) do
+    --         if math.random(10) == 1 then
+    --             force.technologies[tech].researched = true
+    --             force.technologies[tech].level = 100
+    --             break
+    --         end
+    --     end
+    -- end
 
     -- 更新UI信息
     players_gui()
@@ -738,6 +782,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     if table_size(tiles) > 0 then
         surface.set_tiles(tiles)
     end
+    players_gui() -- 更新...
 end)
 
 local function can_reset()
@@ -752,11 +797,11 @@ script.on_event(defines.events.on_rocket_launched, function(event)
     game.print({'wn.warp-time-rocket', decrease, get_warp_time_left()})
 end)
 
-script.on_event(defines.events.on_player_died, function(event)
-    local decrease = storage.warp_minutes_per_death
-    storage.warp_minutes_total = storage.warp_minutes_total - decrease
-    game.print({'wn.warp-time-death', decrease, get_warp_time_left()})
-end)
+-- script.on_event(defines.events.on_player_died, function(event)
+--     local decrease = storage.warp_minutes_per_death
+--     storage.warp_minutes_total = storage.warp_minutes_total - decrease
+--     game.print({'wn.warp-time-death', decrease, get_warp_time_left()})
+-- end)
 
 script.on_event(defines.events.on_research_finished, function(event)
 
