@@ -1,6 +1,7 @@
 -- local handler = require("event_handler")
 -- local functions = require("functions")
 -- 常数
+local day_to_tick = 5184000
 local hour_to_tick = 216000
 local min_to_tick = 3600
 
@@ -49,7 +50,10 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-heart",
         -- sprite = "entity/market",
         name = "statistics",
-        tooltip = {"", {"wn.statistics-title"}, {"wn.statistics-run", storage.run_auto, storage.run_perfect},
+        tooltip = {"", {"wn.statistics-title"},
+                   {"wn.statistics-run", math.ceil(game.tick / day_to_tick), storage.run_auto, storage.run_perfect},
+
+                   {"wn.statistics-title-tech"},
                    {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
                     make_tech('chemical-science-pack'), make_tech('production-science-pack'),
                     make_tech('utility-science-pack'), make_tech('space-science-pack'),
@@ -180,7 +184,7 @@ local function random_frequency()
 end
 
 local function random_size()
-    return readable(0.1 + random_exp(4) * storage.size)
+    return readable(0.1 + random_exp(3) * storage.size)
 end
 
 local function random_richness()
@@ -294,9 +298,14 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     -- 火星
     if surface == game.surfaces.vulcanus then
 
-        for _, res in pairs({'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser', 'tungsten_ore'}) do
+        for _, res in pairs({'vulcanus_coal', 'calcite', 'sulfuric_acid_geyser'}) do
             mgs.autoplace_controls[res].size = random_size()
             mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].frequency = random_frequency()
+        end
+        for _, res in pairs({'tungsten_ore'}) do
+            mgs.autoplace_controls[res].size = random_size()
+            mgs.autoplace_controls[res].richness = random_richness() * storage.local_specialty_multiplier
             mgs.autoplace_controls[res].frequency = random_frequency()
         end
         mgs.autoplace_controls['vulcanus_volcanism'].size = random_nature()
@@ -307,7 +316,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     if surface == game.surfaces.fulgora then
         for _, res in pairs({'scrap'}) do
             mgs.autoplace_controls[res].size = random_size()
-            mgs.autoplace_controls[res].richness = random_richness()
+            mgs.autoplace_controls[res].richness = random_richness() * storage.local_specialty_multiplier
             mgs.autoplace_controls[res].frequency = random_frequency()
         end
 
@@ -340,9 +349,8 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     end
 
     if surface == game.surfaces.aquilo then
-        local richness = random_richness()
         for _, res in pairs({'lithium_brine', 'fluorine_vent', 'aquilo_crude_oil'}) do
-            mgs.autoplace_controls[res].richness = richness
+            mgs.autoplace_controls[res].richness = random_richness() * storage.local_specialty_multiplier * 0.5
         end
     end
 
@@ -374,6 +382,7 @@ local function run_reset(is_perfect)
 
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
+
     -- 更新主线任务
     -- storage.mining_current = 0
     -- storage.mining_needed = math.min(100, math.max(10, storage.run))
@@ -473,8 +482,8 @@ local function run_reset(is_perfect)
         storage.warp_minutes_per_tech_multiplayer = 10
     end
     storage.warp_minutes_per_tech = math.ceil(storage.warp_minutes_per_tech_multiplayer *
-                                                  math.sqrt(game.difficulty_settings.technology_price_multiplier))
-    storage.warp_minutes_total = math.max(3, 3 * storage.warp_minutes_per_tech)
+                                                  game.difficulty_settings.technology_price_multiplier)
+    storage.warp_minutes_total = math.max(3, storage.warp_minutes_per_tech)
 
     -- 刷新星系参数
     storage.solar_power_multiplier = readable(random_exp(4))
@@ -518,8 +527,13 @@ local function run_reset(is_perfect)
     local force = game.forces.player
     if storage.run >= 1 then
         force.technologies['oil-processing'].researched = true
-        -- force.technologies['space-platform'].researched = true
+        force.technologies['uranium-mining'].researched = true
+        force.technologies['space-platform'].researched = true
         -- force.technologies['space-science-pack'].researched = true
+        force.technologies['planet-discovery-vulcanus'].researched = true
+        force.technologies['planet-discovery-gleba'].researched = true
+        force.technologies['planet-discovery-fulgora'].researched = true
+        force.technologies['planet-discovery-aquilo'].researched = true
         force.unlock_space_location(nauvis)
         force.unlock_space_location(vulcanus)
         force.unlock_space_location(gleba)
@@ -577,6 +591,7 @@ script.on_init(function()
     storage.richness = 1
     storage.frequency = 1
     storage.size = 1
+    storage.local_specialty_multiplier = 0.2
 
     storage.radius = 2048
     storage.radius_of = {}
@@ -731,10 +746,16 @@ end
 
 script.on_event(defines.events.on_rocket_launched, function(event)
     local decrease = math.ceil(get_warp_time_left() * (storage.warp_minutes_per_rocket) / 100)
+    decrease = math.min(storage.warp_minutes_per_tech, decrease)
     decrease = math.max(1, decrease)
-    decrease = math.min(10, decrease)
     storage.warp_minutes_total = storage.warp_minutes_total - decrease
     game.print({'wn.warp-time-rocket', decrease, get_warp_time_left()})
+end)
+
+script.on_event(defines.events.on_player_died, function(event)
+    local decrease = storage.warp_minutes_per_death
+    storage.warp_minutes_total = storage.warp_minutes_total - decrease
+    game.print({'wn.warp-time-death', decrease, get_warp_time_left()})
 end)
 
 script.on_event(defines.events.on_research_finished, function(event)
@@ -744,8 +765,10 @@ script.on_event(defines.events.on_research_finished, function(event)
 
     if not event.by_script then
         -- 增加时间
-        storage.warp_minutes_total = storage.warp_minutes_total + storage.warp_minutes_per_tech
-        game.print({'wn.warp-time-tech', storage.warp_minutes_per_tech, get_warp_time_left()})
+        if research.prototype and not research.prototype.research_trigger then
+            storage.warp_minutes_total = storage.warp_minutes_total + storage.warp_minutes_per_tech
+            game.print({'wn.warp-time-tech', storage.warp_minutes_per_tech, get_warp_time_left()})
+        end
 
         -- 自动添加无限科技
         if research.level > 5 then
@@ -797,7 +820,7 @@ commands.add_command("time_left", {"wn.suicide-help"}, function(command)
     local player = game.get_player(command.player_index)
     if player.character then
         local time_left = get_warp_time_left()
-        game.print({'wn.warp-time-left', time_left})
+        player.print({'wn.warp-time-left', time_left})
     end
 end)
 
