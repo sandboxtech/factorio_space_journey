@@ -4,7 +4,6 @@
 local day_to_tick = 5184000
 local hour_to_tick = 216000
 local min_to_tick = 3600
--- [virtual-signal=signal-hourglass]
 
 local nauvis = 'nauvis'
 local vulcanus = 'vulcanus'
@@ -30,7 +29,7 @@ local function make_tech(name1)
 end
 
 local function make_tech2(name1, name2)
-    return {"wn.statistics-run-tech", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0}
+    return {"wn.statistics-run-tech2", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0, name2}
 end
 
 local function make_tech3(name1, name2, name3)
@@ -49,11 +48,28 @@ local function try_add_trait(trait)
     table.insert(storage.traits, trait)
 end
 
+local function try_add_legacy(trait)
+    if not storage.legacies then
+        storage.legacies = {""}
+    end
+    if table_size(storage.legacies) >= 18 then
+        -- factorio limit
+        return
+    end
+    table.insert(storage.legacies, trait)
+end
+
+local productivity_tech_names = {'plastic-bar-productivity', 'steel-plate-productivity',
+                                 'low-density-structure-productivity', 'rocket-fuel-productivity',
+                                 'processing-unit-productivity', 'rocket-part-productivity', 'asteroid-productivity',
+                                 'scrap-recycling-productivity', 'research-productivity'}
+
 -- 左上角信息内容
 local function player_gui(player)
 
     if not storage.current_hostname then
-        storage.current_hostname = 'storage.current_hostname'
+        storage.current_hostname =
+            '\nQ群541826511\n查看倒计时，输入 \\time_left\n自杀，输入 \\suicide\n踢玩家，输入 \\ti <玩家名>'
     end
     player.gui.top.clear()
     player.gui.top.add {
@@ -85,9 +101,8 @@ local function player_gui(player)
                    {"", make_tech2('epic-quality', 'legendary-quality'), "\n"},
 
                    {"", make_tech3('mining-productivity-3', 'plastic-bar-productivity', 'steel-plate-productivity'),
-                    make_tech3('low-density-structure-productivity', 'rocket-part-productivity',
+                    make_tech3('low-density-structure-productivity', 'rocket-fuel-productivity',
             'processing-unit-productivity'),
-                    make_tech3('metallurgic-science-pack', 'agricultural-science-pack', 'electromagnetic-science-pack'),
                     make_tech3('rocket-part-productivity', 'asteroid-productivity', 'scrap-recycling-productivity'),
                     "\n"}, make_tech('research-productivity'), "\n"},
 
@@ -104,6 +119,16 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-info",
         name = "traits",
         tooltip = storage.traits
+    }
+
+    if not storage.legacies then
+        storage.legacies = {""}
+    end
+    player.gui.top.add {
+        type = "sprite-button",
+        sprite = "virtual-signal/signal-skull",
+        name = "legacies",
+        tooltip = storage.legacies
     }
 
     player.gui.top.add {
@@ -134,6 +159,17 @@ commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
     end
 end)
 
+local function try_enter_space_platform(player)
+    local space_platform = game.forces.player.platforms[1]
+    if space_platform then
+        player.enter_space_platform(space_platform)
+    else
+        local pos = game.surfaces.nauvis.find_non_colliding_position('character',
+            {storage.respawn_x, storage.respawn_y}, 0, 1)
+        player.teleport(pos, game.surfaces.nauvis)
+    end
+end
+
 -- 重置玩家
 local function player_reset(player)
     if not player then
@@ -142,11 +178,8 @@ local function player_reset(player)
     if game.tick - player.last_online > 48 * hour_to_tick then
         -- pass
     end
-    player.clear_items_inside() -- 清空玩家
     player.disable_flashlight()
-    local pos = game.surfaces.nauvis.find_non_colliding_position('character', {storage.respawn_x, storage.respawn_y}, 0,
-        1)
-    player.teleport(pos, game.surfaces.nauvis)
+    try_enter_space_platform(player)
 end
 
 -- 开图
@@ -162,6 +195,7 @@ script.on_event(defines.events.on_player_respawned, function(event)
             y = radius
         }})
     end
+    try_enter_space_platform(player)
 end)
 
 -- 创建玩家
@@ -169,6 +203,7 @@ script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
     player_reset(player)
     player_gui(player)
+    try_enter_space_platform(player)
 end)
 
 local function create_entity(name, x, y)
@@ -269,30 +304,32 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     -- 星球昼夜
     surface.always_day = false
     surface.freeze_daytime = false
-    surface.min_brightness = 0.15 * (2 * math.random())
+    surface.min_brightness = 0
     surface.wind_speed = 0.02 * (0.5 + math.random())
     surface.wind_orientation = math.random()
     surface.wind_orientation_change = 0.0001 * (0.5 + math.random())
     surface.solar_power_multiplier = storage.solar_power_multiplier
 
-    if math.random(1, 3) == 1 then
+    if math.random(1, 5) == 1 then
         -- 潮汐锁定，永夜
         surface.freeze_daytime = true
-        surface.daytime = 0
+
+        surface.daytime = 0.56
         try_add_trait({'wn.eternal-night', surface.name})
-    elseif math.random(1, 2) == 1 then
+    elseif math.random(1, 4) == 1 then
         -- 潮汐锁定，永昼
         surface.freeze_daytime = true
-        surface.daytime = 0.5
+
+        surface.daytime = 0
         try_add_trait({'wn.eternal-day', surface.name})
     end
 
     if not storage.radius then
-        storage.radius = 1024
+        storage.radius = 768
     end
     -- 刷新星球半径
     local r = storage.radius * random_exp(3)
-    r = math.max(192, r)
+    r = math.max(256, r)
     r = math.min(2048, r)
     if surface == game.surfaces.nauvis then
         r = r * 1.5 -- 母星更大？
@@ -415,7 +452,7 @@ local function run_reset(is_perfect)
     -- 清除星球前
     local last_run_ticks = (game.tick - storage.run_start_tick)
     game.print({"wn.warp-success-time", math.floor(last_run_ticks / hour_to_tick),
-                math.floor(last_run_ticks / min_to_tick)})
+                math.floor(last_run_ticks / min_to_tick) % 60})
     storage.run_start_tick = game.tick
     storage.statistics_in_run = {}
 
@@ -452,8 +489,10 @@ local function run_reset(is_perfect)
 
     -- 重置玩家
     for _, player in pairs(game.players) do
-        if player.surface and not player.surface.platform and player.character and player.character.die then
+        -- if player.surface and not player.surface.platform and player.character and player.character.die then
+        if player.surface and not player.surface.platform then
             -- player.character.die() -- die?
+            player.clear_items_inside() -- 清空玩家
             player_reset(player)
         else
             if player.get_inventory then
@@ -478,6 +517,7 @@ local function run_reset(is_perfect)
 
     -- 删除星球前
     storage.traits = {"", {'wn.traits-title'}}
+    storage.legacies = {"", {'wn.legacies-title'}}
 
     game.surfaces["nauvis"].clear(true)
     if game.surfaces["vulcanus"] ~= nil then
@@ -495,6 +535,16 @@ local function run_reset(is_perfect)
 
     local force = game.forces.player
 
+    -- productivity_techs
+    if not storage.productivity_tech_levels then
+        storage.productivity_tech_levels = {}
+    end
+
+    for _, tech_name in pairs(productivity_tech_names) do
+        local tech = force.technologies[tech_name]
+        storage.productivity_tech_levels[tech_name] = math.max(1, tech.level - 1)
+    end
+
     -- 延续一次研究产能
     storage.laboratory_productivity_bonus = not force.technologies['research-productivity'].researched and 0 or
                                                 force.technologies['research-productivity'] * 0.1
@@ -505,6 +555,19 @@ local function run_reset(is_perfect)
     force.reset()
     force.friendly_fire = true
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
+
+    -- 清空标记
+    for _, surface in pairs(game.surfaces) do
+        for _, tag in pairs(game.forces.player.find_chart_tags(surface)) do
+            tag.destroy()
+        end
+    end
+
+    -- 瞬移飞船
+    for _, platform in pairs(force.platforms) do
+        platform.space_location = 'nauvis'
+        platform.paused = true
+    end
 
     -- 重置科技
 
@@ -519,14 +582,23 @@ local function run_reset(is_perfect)
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.spoil_time_modifier = readable(0.3 + random_exp(4))
-    game.difficulty_settings.technology_price_multiplier = readable(random_exp(3))
 
-    if not storage.warp_minutes_per_tech_multiplayer then
-        storage.warp_minutes_per_tech_multiplayer = 10
+    local tech_multiplier = readable(random_exp(4))
+    tech_multiplier = math.max(tech_multiplier, 0.5 - storage.run_perfect * 0.1)
+    tech_multiplier = math.min(tech_multiplier, 2 + storage.run_perfect * 0.1)
+    game.difficulty_settings.technology_price_multiplier = tech_multiplier
+
+    if not storage.warp_minutes_per_tech_multiplier then
+        storage.warp_minutes_per_tech_multiplier = 10
     end
-    storage.warp_minutes_per_tech = math.ceil(storage.warp_minutes_per_tech_multiplayer *
-                                                  game.difficulty_settings.technology_price_multiplier)
-    storage.warp_minutes_total = math.max(3, storage.warp_minutes_per_tech)
+
+    -- if storage.warp_minutes_per_tech_multiplayer then
+    --     storage.warp_minutes_per_tech_multiplayer = nil
+    -- end
+
+    storage.warp_minutes_per_tech = math.floor(storage.warp_minutes_per_tech_multiplier *
+                                                   game.difficulty_settings.technology_price_multiplier)
+    storage.warp_minutes_total = math.max(10, storage.warp_minutes_per_tech)
 
     -- 刷新星系参数
     storage.solar_power_multiplier = readable(random_exp(4))
@@ -547,32 +619,14 @@ local function run_reset(is_perfect)
         game.print({"wn.free-tech", name})
     end
 
-    -- local tech_price = game.difficulty_settings.technology_price_multiplier
-    -- if tech_price >= 20 then
-    --     research_recursive('space-science-pack')
-    --     research_recursive('production-science-pack')
-    --     research_recursive('utility-science-pack')
-    -- elseif tech_price >= 10 then
-    --     research_recursive('space-science-pack')
-    --     research_recursive('production-science-pack')
-    -- elseif tech_price >= 5 then
-    --     research_recursive('space-science-pack')
-    -- elseif tech_price >= 2 then
-    --     research_recursive('chemical-science-pack')
-    -- elseif tech_price >= 1 then
-    --     research_recursive('logistic-science-pack')
-    -- elseif tech_price >= 0.5 then
-    --     research_recursive('automation-science-pack')
-    -- elseif tech_price >= 0.2 then
-
-    -- end
-
     local force = game.forces.player
     if storage.run >= 1 then
         force.technologies['oil-processing'].researched = true
         force.technologies['uranium-mining'].researched = true
         force.technologies['space-platform'].researched = true
-        -- force.technologies['space-science-pack'].researched = true
+        force.technologies['space-science-pack'].researched = true
+        force.technologies['space-platform-thruster'].researched = true
+
         force.technologies['planet-discovery-vulcanus'].researched = true
         force.technologies['planet-discovery-gleba'].researched = true
         force.technologies['planet-discovery-fulgora'].researched = true
@@ -589,11 +643,18 @@ local function run_reset(is_perfect)
                    {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
                    {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier}})
 
-    force.laboratory_productivity_bonus = storage.laboratory_productivity_bonus
-    force.mining_drill_productivity_bonus = storage.mining_drill_productivity_bonus
-    try_add_trait({'', {'wn.productivity_bonus'},
-                   {'wn.mining_drill_productivity_bonus', storage.mining_drill_productivity_bonus},
-                   {'wn.laboratory_productivity_bonus', storage.laboratory_productivity_bonus}})
+    for _, tech_name in pairs(productivity_tech_names) do
+        local level = storage.productivity_tech_levels[tech_name]
+        force.technologies[tech_name].level = level
+        try_add_legacy({'wn.legacy-bonus', tech_name, level})
+    end
+
+    -- force.laboratory_productivity_bonus = storage.laboratory_productivity_bonus
+    -- force.mining_drill_productivity_bonus = storage.mining_drill_productivity_bonus
+
+    -- try_add_legacy({'', {'wn.productivity_bonus'},
+    --                 {'wn.mining_drill_productivity_bonus', storage.mining_drill_productivity_bonus},
+    --                 {'wn.laboratory_productivity_bonus', storage.laboratory_productivity_bonus}})
 
     if is_perfect then
         research_recursive('space-science-pack')
@@ -652,12 +713,6 @@ script.on_init(function()
     run_reset(false)
 end)
 
-script.on_event(defines.events.on_gui_click, function(event)
-    if event.element.name == "suicide" then
-        -- 紫砂
-    end
-end)
-
 script.on_event(defines.events.on_player_left_game, function(event)
     if not event.player then
         return
@@ -666,7 +721,7 @@ script.on_event(defines.events.on_player_left_game, function(event)
 end)
 
 local function get_warp_time_left()
-    local minutes_gone = math.ceil((game.tick - storage.run_start_tick) / min_to_tick)
+    local minutes_gone = math.floor((game.tick - storage.run_start_tick) / min_to_tick)
     local minutes_left = storage.warp_minutes_total - minutes_gone
     return minutes_left
 end
@@ -679,12 +734,13 @@ end
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
 
-    if table_size(game.connected_players) <= 1 then
-        for _, player in pairs(game.players) do
-            -- player.clear_console()
-            print_warp_time_left()
-        end
-    end
+    -- if table_size(game.connected_players) <= 1 then
+    --     for _, player in pairs(game.players) do
+    --         player.clear_console()
+    --     end
+    -- end
+
+    print_warp_time_left()
 
     local welcome = {}
     if player.online_time > 0 then
@@ -799,11 +855,51 @@ local function can_reset()
 end
 
 script.on_event(defines.events.on_rocket_launched, function(event)
+    if not event.rocket_silo then
+        return
+    end
+    if not event.rocket then
+        return
+    end
+
     local decrease = math.ceil(get_warp_time_left() * (storage.warp_minutes_per_rocket) / 100)
     decrease = math.min(storage.warp_minutes_per_tech, decrease)
     decrease = math.max(1, decrease)
     storage.warp_minutes_total = storage.warp_minutes_total - decrease
-    game.print({'wn.warp-time-rocket', decrease, get_warp_time_left()})
+
+    local silo = event.rocket_silo
+
+    game.print({'wn.warp-time-rocket', decrease, get_warp_time_left(), math.floor(silo.position.x),
+                math.floor(silo.position.y), silo.surface.name})
+end)
+
+script.on_event(defines.events.on_cargo_pod_finished_ascending, function(event)
+    local cargo_pod = event.cargo_pod
+    if not cargo_pod then
+        return
+    end
+
+    if event.player_index then
+        local player = game.get_player(event.player_index)
+        game.print({'wn.on_cargo_pod_finished_ascending_player', player.name})
+        return
+    end
+
+    local inventory = cargo_pod.get_inventory(defines.inventory.cargo_unit)
+    if not inventory then
+        game.print({'wn.on_cargo_pod_finished_ascending_nothing', player.name})
+        return
+    end
+
+    local contents = inventory.get_contents()
+    if table_size(contents) < 1 then
+        game.print({'wn.on_cargo_pod_finished_ascending_nothing', player.name})
+        return
+    end
+
+    local content = contents[1]
+    game.print({'wn.on_cargo_pod_finished_ascending_item', content.name, content.quality, content.count})
+
 end)
 
 -- script.on_event(defines.events.on_player_died, function(event)
@@ -862,7 +958,7 @@ commands.add_command("run_perfect", {"wn.run-reset-help"}, function(command)
 end)
 
 -- 自杀
-commands.add_command("suiside", {"wn.suicide-help"}, function(command)
+commands.add_command("suicide", {"wn.suicide-help"}, function(command)
     local player = game.get_player(command.player_index)
     if player.character then
         player.character.die()
@@ -875,6 +971,21 @@ commands.add_command("time_left", {"wn.suicide-help"}, function(command)
     if player.character then
         local time_left = get_warp_time_left()
         player.print({'wn.warp-time-left', time_left})
+    end
+end)
+
+-- 踢人
+commands.add_command("ti", {"wn.ti-help"}, function(command)
+    local player = game.get_player(command.player_index)
+    local player2 = game.get_player(command.parameter)
+    if not player2 then
+        player.print({"wn.ti-player-not-found", command.parameter})
+    end
+    if player.online_time > player2.online_time * 10 then
+        player.print({"wn.ti-success", player.name, player2.name})
+        game.kick_player(player2)
+    else
+        player.print({"wn.ti-failure", player.name, player2.name})
     end
 end)
 
@@ -938,7 +1049,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
     end
     if not storage.statistics_in_run[name] then
         storage.statistics_in_run[name] = true
-        game.print({"wn.congrats-first-visit", name})
+        -- game.print({"wn.congrats-first-visit", name})
     end
     players_gui()
 
