@@ -142,20 +142,6 @@ local function player_gui(player)
                    {"wn.galaxy-trait-more"}}
     }
 
-    -- if not storage.LymBAOBEI then
-    --     storage.LymBAOBEI = true
-    -- end
-    -- if storage.LymBAOBEI then
-    --     player.gui.top.add {
-    --         type = "sprite-button",
-    --         sprite = 'virtual-signal/signal-white-flag',
-    --         -- sprite = "space-location/solar-system-edge",
-    --         name = "LymBAOBEI",
-    --         tooltip = {"", {"wn.LymBAOBEI-run-perfect", math.min(storage.run_perfect, 12)},
-    --                    {"wn.LymBAOBEI-win-condition",
-    --                     math.min(game.forces.player.technologies['research-productivity'].level - 1, 30)}}
-    --     }
-    -- end
 end
 
 local function players_gui()
@@ -225,6 +211,15 @@ script.on_event(defines.events.on_pre_player_left_game, function(event)
     if player.surface and not player.surface.platform then
         if player.character then
             player.character.die()
+            for _, space_platform in pairs(game.forces.player.platforms) do
+                local corpses = space_platform.surface.find_entities_filtered {
+                    area = {{-4, -4}, {4, 4}},
+                    type = 'character-corpse'
+                }
+                for _, corpse in pairs(corpses) do
+                    corpse.destroy()
+                end
+            end
         end
     end
 end)
@@ -290,7 +285,7 @@ end
 
 local function random_nature()
     if not storage.nature then
-        storage.nature = 2
+        storage.nature = 3
     end
     return readable(math.pow(2, (math.random() - math.random()) * storage.nature))
 end
@@ -356,6 +351,12 @@ local function set_resource(name, mgs, richness_multiplier)
     mgs.autoplace_controls[name].frequency = frequency
 end
 
+local function random_nature_mgs(mgs, name)
+    mgs.autoplace_controls[name].richness = random_nature()
+    mgs.autoplace_controls[name].frequency = random_nature()
+    mgs.autoplace_controls[name].size = random_nature()
+end
+
 -- 创建随机表面
 script.on_event(defines.events.on_surface_cleared, function(event)
 
@@ -411,28 +412,24 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     mgs.width = r * 2 + 32
     mgs.height = r * 2 + 32
 
+    mgs.starting_area = 2 * random_exp(2)
+
     -- 母星
     if surface == game.surfaces.nauvis then
         surface.peaceful_mode = false
 
         local names = {''}
-        for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'uranium-ore', 'crude-oil'}) do
+        for _, res in pairs({'iron-ore', 'copper-ore', 'stone', 'coal', 'crude-oil'}) do
             set_resource(res, mgs)
         end
 
-        for _, res in pairs({'water', 'trees', 'enemy-base', 'rocks', 'nauvis_cliff'}) do
-            mgs.autoplace_controls[res].richness = random_nature()
-            mgs.autoplace_controls[res].frequency = random_nature()
+        for _, res in pairs({'uranium-ore'}) do
+            set_resource(res, mgs, storage.local_specialty_multiplier)
         end
 
-        mgs.autoplace_controls['nauvis_cliff'].richness = random_nature()
-        mgs.autoplace_controls['nauvis_cliff'].frequency = random_nature()
-        mgs.autoplace_controls['nauvis_cliff'].size = random_nature()
-
-        mgs.autoplace_controls['starting_area_moisture'].richness = random_nature()
-        mgs.autoplace_controls['starting_area_moisture'].frequency = random_nature()
-        mgs.autoplace_controls['starting_area_moisture'].size = random_nature()
-
+        for _, res in pairs({'water', 'trees', 'enemy-base', 'rocks', 'nauvis_cliff', 'starting_area_moisture'}) do
+            random_nature_mgs(mgs, res)
+        end
     end
 
     -- 火星
@@ -444,23 +441,17 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         for _, res in pairs({'tungsten_ore'}) do
             set_resource(res, mgs, storage.local_specialty_multiplier)
         end
-        mgs.autoplace_controls['vulcanus_volcanism'].size = random_nature()
-        mgs.autoplace_controls['vulcanus_volcanism'].frequency = random_nature()
+        random_nature_mgs(mgs, 'vulcanus_volcanism')
     end
 
     -- 雷星
     if surface == game.surfaces.fulgora then
         for _, res in pairs({'scrap'}) do
-            set_resource(res, mgs, storage.local_specialty_multiplier * 0.5)
+            set_resource(res, mgs, storage.local_specialty_multiplier)
         end
 
-        mgs.autoplace_controls['fulgora_islands'].richness = random_nature()
-        mgs.autoplace_controls['fulgora_islands'].size = random_nature()
-        mgs.autoplace_controls['fulgora_islands'].frequency = random_nature()
-
-        mgs.autoplace_controls['fulgora_cliff'].richness = random_nature()
-        mgs.autoplace_controls['fulgora_cliff'].size = random_nature()
-        mgs.autoplace_controls['fulgora_cliff'].frequency = random_nature()
+        random_nature_mgs(mgs, 'fulgora_islands')
+        random_nature_mgs(mgs, 'fulgora_cliff')
     end
 
     -- 草星
@@ -473,18 +464,14 @@ script.on_event(defines.events.on_surface_cleared, function(event)
         mgs.autoplace_controls['gleba_enemy_base'].size = math.random() * 6
         mgs.autoplace_controls['gleba_enemy_base'].frequency = math.random() * 6
 
-        mgs.autoplace_controls['gleba_water'].richness = random_nature()
-        mgs.autoplace_controls['gleba_water'].size = random_nature()
-        mgs.autoplace_controls['gleba_water'].frequency = random_nature()
-
-        mgs.autoplace_controls['gleba_plants'].richness = random_nature()
-        mgs.autoplace_controls['gleba_plants'].size = random_nature()
-        mgs.autoplace_controls['gleba_plants'].frequency = random_nature()
+        random_nature_mgs(mgs, 'gleba_water')
+        random_nature_mgs(mgs, 'gleba_plants')
+        random_nature_mgs(mgs, 'gleba_cliff')
     end
 
     if surface == game.surfaces.aquilo then
         for _, res in pairs({'lithium_brine', 'fluorine_vent', 'aquilo_crude_oil'}) do
-            set_resource(res, mgs, storage.local_specialty_multiplier * 0.25)
+            set_resource(res, mgs, storage.local_specialty_multiplier * 0.5)
         end
     end
 
@@ -686,6 +673,7 @@ local function run_reset(is_perfect)
     end
 
     local force = game.forces.player
+
     if storage.run >= 1 then
         force.technologies['oil-processing'].researched = true
         force.technologies['uranium-processing'].researched = true
@@ -693,15 +681,15 @@ local function run_reset(is_perfect)
         force.technologies['space-science-pack'].researched = true
         force.technologies['space-platform-thruster'].researched = true
 
-        force.technologies['planet-discovery-vulcanus'].researched = true
-        force.technologies['planet-discovery-gleba'].researched = true
-        force.technologies['planet-discovery-fulgora'].researched = true
+        -- force.technologies['planet-discovery-vulcanus'].researched = true
+        -- force.technologies['planet-discovery-gleba'].researched = true
+        -- force.technologies['planet-discovery-fulgora'].researched = true
         -- force.technologies['planet-discovery-aquilo'].researched = true
         force.unlock_space_location(nauvis)
         force.unlock_space_location(vulcanus)
         force.unlock_space_location(gleba)
         force.unlock_space_location(fulgora)
-        force.unlock_space_location(aquilo)
+        -- force.unlock_space_location(aquilo)
     end
 
     try_add_trait({'', '\n',
@@ -837,19 +825,6 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     -- local chunk_position = event.position
     local left_top = event.area.left_top
 
-    -- if surface == game.surfaces.nauvis then
-    --     -- 母星富矿
-    --     local ores = game.surfaces[1].find_entities_filtered {
-    --         area = event.area,
-    --         name = {"iron-ore", "copper-ore", "stone", "coal", "uranium-ore"}
-    --     }
-    --     if ores then
-    --         for i, entity in pairs(ores) do
-    --             entity.amount = (entity.amount + math.random()) * 4
-    --         end
-    --     end
-    -- end
-
     -- 圆形地图
     local r = storage.radius_of[surface.name]
     if not r then
@@ -973,22 +948,6 @@ script.on_event(defines.events.on_research_finished, function(event)
         end
 
     end
-
-    -- if research_name == 'research-productivity' then
-    --     if research.level >= 30 then
-    --         game.set_game_state {
-    --             game_finished = true,
-    --             player_won = true,
-    --             can_continue = true,
-    --             victorious_force = game.forces.player
-    --         }
-    --     else
-    --         game.print({'wn.LymBAOBEI-progress', research.level - 1})
-
-    --     end
-    -- else
-    --     game.reset_game_state()
-    -- end
 
     players_gui()
 end)
