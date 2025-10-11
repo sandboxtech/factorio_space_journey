@@ -1023,8 +1023,19 @@ commands.add_command("teleport", {"wn.ti-help"}, function(command)
         player.print({"wn.teleport-surface-not-found", command.parameter})
         return
     end
+
+    for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_guns,
+                                   defines.inventory.character_armor, defines.inventory.character_ammo,
+                                   defines.inventory.character_vehicle, defines.inventory.character_trash}) do
+        local inventory = player.get_inventory(inventory_def)
+        if not inventory.is_empty() then
+            player.print({"wn.teleport-inventory-not-empty"})
+            return
+        end
+    end
+
     if player.character then
-        local pos = game.surfaces.nauvis.find_non_colliding_position('character', {0, 0}, 0, 1)
+        local pos = surface.find_non_colliding_position('character', {0, 0}, 0, 1)
         player.teleport(pos, surface)
         player.clear_items_inside()
         game.print({'wn.teleport-notice', player.name, surface.name})
