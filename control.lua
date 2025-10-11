@@ -715,9 +715,9 @@ local function run_reset(is_perfect)
         -- force.unlock_space_location(aquilo)
     end
 
-    -- if is_perfect then
-    --     research_recursive('space-science-pack')
-    -- end
+    if table_size(force.platforms) == 0 then
+        research_recursive('space-platform')
+    end
 
     -- 更新UI信息
     players_gui()
