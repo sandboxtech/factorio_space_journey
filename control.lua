@@ -1,6 +1,3 @@
--- local handler = require("event_handler")
--- local functions = require("functions")
--- 常数
 local day_to_tick = 5184000
 local hour_to_tick = 216000
 local min_to_tick = 3600
@@ -24,17 +21,9 @@ local function make_location(name)
     return {"wn.statistics-run-location", storage.statistics[name] or 0, name}
 end
 
-local function make_tech(name1)
-    return {"wn.statistics-run-tech", storage.statistics[name1] or 0, name1}
-end
-
-local function make_tech2(name1, name2)
-    return {"wn.statistics-run-tech2", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0, name2}
-end
-
-local function make_tech3(name1, name2, name3)
-    return {"wn.statistics-run-tech3", storage.statistics[name1] or 0, name1, storage.statistics[name2] or 0, name2,
-            storage.statistics[name3] or 0, name3}
+local function make_tech(name)
+    return {"wn.statistics-run-tech", storage.statistics[name] or 0, name,
+            game.forces.player.technologies[name].localised_name}
 end
 
 local function try_add_trait(trait)
@@ -53,10 +42,13 @@ local function try_add_legacy(trait)
     table.insert(storage.legacies, trait)
 end
 
-local productivity_tech_names = {'steel-plate-productivity', 'plastic-bar-productivity',
-                                 'low-density-structure-productivity', 'rocket-fuel-productivity',
-                                 'processing-unit-productivity', 'rocket-part-productivity', 'asteroid-productivity',
-                                 'scrap-recycling-productivity', 'research-productivity'}
+local infinite_tech_names = {'steel-plate-productivity', 'plastic-bar-productivity',
+                             'low-density-structure-productivity', 'rocket-fuel-productivity',
+                             'processing-unit-productivity', 'rocket-part-productivity', 'research-productivity',
+                             'scrap-recycling-productivity', 'asteroid-productivity', 'physical-projectile-damage-7',
+                             'stronger-explosives-7', 'refined-flammables-7', 'laser-weapons-damage-7',
+                             'electric-weapons-damage-4', 'artillery-shell-damage-1', 'railgun-damage-1',
+                             'worker-robots-speed-7', 'mining-productivity-3', 'follower-robot-count-5', 'health'}
 
 -- 左上角信息内容
 local function player_gui(player)
@@ -88,21 +80,25 @@ local function player_gui(player)
         sprite = "virtual-signal/signal-science-pack",
         name = "science",
         tooltip = {"", {"wn.statistics-title-tech"},
-                   {"", make_tech3('automation-science-pack', 'logistic-science-pack', 'chemical-science-pack'),
-                    make_tech3('production-science-pack', 'utility-science-pack', 'space-science-pack'),
-                    make_tech3('metallurgic-science-pack', 'agricultural-science-pack', 'electromagnetic-science-pack'),
-                    make_tech3('military-science-pack', 'cryogenic-science-pack', 'promethium-science-pack'), "\n"},
-                   {"", make_tech2('epic-quality', 'legendary-quality'), "\n"},
+                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
+                    make_tech('chemical-science-pack'), make_tech('production-science-pack'),
+                    make_tech('utility-science-pack'), make_tech('space-science-pack'),
+                    make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
+                    make_tech('electromagnetic-science-pack'), make_tech('military-science-pack'),
+                    make_tech('cryogenic-science-pack'), make_tech('promethium-science-pack'), "\n"},
 
-                   {"", make_tech3('mining-productivity-3', 'plastic-bar-productivity', 'steel-plate-productivity'),
-                    make_tech3('low-density-structure-productivity', 'rocket-fuel-productivity',
-            'processing-unit-productivity'),
-                    make_tech3('rocket-part-productivity', 'asteroid-productivity', 'scrap-recycling-productivity'),
-                    "\n"}, make_tech('research-productivity'), "\n"},
+                   {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
 
-        {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
-         make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'), make_tech('electric-weapons-damage-4'),
-         make_tech('artillery-shell-damage-1'), make_tech('railgun-damage-1'), "\n"}
+                   {"", make_tech('mining-productivity-3'), make_tech('plastic-bar-productivity'),
+                    make_tech('steel-plate-productivity'), make_tech('low-density-structure-productivity'),
+                    make_tech('rocket-fuel-productivity', 'processing-unit-productivity'),
+                    make_tech('rocket-part-productivity'), make_tech('asteroid-productivity'),
+                    make_tech('scrap-recycling-productivity'), "\n", make_tech('research-productivity'), "\n"},
+
+                   {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
+                    make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'),
+                    make_tech('electric-weapons-damage-4'), make_tech('artillery-shell-damage-1'),
+                    make_tech('railgun-damage-1'), "\n"}}
     }
 
     if not storage.traits then
@@ -128,7 +124,6 @@ local function player_gui(player)
     player.gui.top.add {
         type = "sprite-button",
         sprite = 'entity/space-platform-hub',
-        -- sprite = "space-location/solar-system-edge",
         name = "galaxy",
         tooltip = {"", {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
                    {"wn.galaxy-trait-platform-size", storage.max_platform_size}, {"wn.galaxy-trait-title"},
@@ -201,6 +196,10 @@ script.on_event(defines.events.on_pre_player_left_game, function(event)
         return
     end
     if player.surface and not player.surface.platform then
+        storage.die_on_pre_player_left_game = storage.die_on_pre_player_left_game or true
+        if not storage.die_on_pre_player_left_game then
+            return
+        end
         if player.character then
             player.character.die()
             -- 删除尸体
@@ -242,7 +241,7 @@ local function create_entity(name, x, y)
     entity.minable = true
     entity.destructible = true
 end
--- [item=cargo-landing-pad]
+
 -- 重置母星
 local function nauvis_reset()
     create_entity('rocket-silo', 5, 5)
@@ -251,7 +250,9 @@ end
 
 -- 数字格式
 local function readable(x)
-    if x < 0.1 then
+    if x < 0 then
+        return 0
+    elseif x < 0.1 then
         return math.ceil(x * 100) * 0.01
     elseif x < 3 then
         return math.floor(x * 10) * 0.1
@@ -603,21 +604,21 @@ local function run_reset(is_perfect)
     local force = game.forces.player
 
     -- productivity_techs
-    storage.productivity_tech_levels = storage.productivity_tech_levels or {}
+    storage.infinite_tech_levels = storage.infinite_tech_levels or {}
 
-    for _, tech_name in pairs(productivity_tech_names) do
+    for _, tech_name in pairs(infinite_tech_names) do
         local tech = force.technologies[tech_name]
-        storage.productivity_tech_levels[tech_name] = math.max(1, tech.level - 1)
+        storage.infinite_tech_levels[tech_name] = math.max(tech.prototype.level, tech.level - 1)
     end
-
-    -- 延续一次研究产能
-    storage.laboratory_productivity_bonus = not force.technologies['research-productivity'].researched and 0 or
-                                                force.technologies['research-productivity'] * 0.1
-    storage.mining_drill_productivity_bonus = not force.technologies['mining-productivity-3'].researched and 0 or
-                                                  force.technologies['mining-productivity-3'] * 0.1
-
     -- 重置玩家势力
     force.reset()
+    for _, tech_name in pairs(infinite_tech_names) do
+        local level = storage.infinite_tech_levels[tech_name]
+        local tech = force.technologies[tech_name]
+        tech.level = level
+        try_add_legacy({'wn.legacy-bonus', tech_name, level - tech.prototype.level, tech.localised_name})
+    end
+
     force.friendly_fire = true
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
 
@@ -637,6 +638,9 @@ local function run_reset(is_perfect)
     game.map_settings.pollution.enabled = true
     game.map_settings.pollution.ageing = readable(random_exp(3))
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(3))
+    try_add_trait({{"wn.galaxy-trait-pollution-ageing", game.map_settings.pollution.ageing}})
+    try_add_trait({{"wn.galaxy-trait-enemy_attack_pollution_consumption_modifier",
+                    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier}})
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.spoil_time_modifier = readable(0.5 + random_exp(4))
@@ -644,13 +648,28 @@ local function run_reset(is_perfect)
     local tech_multiplier = readable(random_exp(4))
 
     tech_multiplier = math.max(tech_multiplier, 0.25 - storage.run_perfect * 0.01)
+    tech_multiplier = math.max(tech_multiplier, 0.1)
     tech_multiplier = math.min(tech_multiplier, 4 + storage.run_perfect * 1)
     game.difficulty_settings.technology_price_multiplier = tech_multiplier
+
+    storage.mining_drill_productivity_bonus_multiplier = storage.mining_drill_productivity_bonus_multiplier or 1
+    storage.laboratory_productivity_bonus_multiplier = storage.laboratory_productivity_bonus_multiplier or 1
+
+    force.mining_drill_productivity_bonus = readable((random_exp(2) - 1) *
+                                                         storage.mining_drill_productivity_bonus_multiplier)
+    force.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
+                                                       storage.laboratory_productivity_bonus_multiplier)
+    try_add_trait({'', '\n',
+                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
+                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
+                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
+                   {"wn.galaxy-trait-mining_drill_productivity_bonus", force.mining_drill_productivity_bonus},
+                   {"wn.galaxy-trait-laboratory_productivity_bonus", force.laboratory_productivity_bonus}})
 
     storage.warp_minutes_per_tech_multiplier = storage.warp_minutes_per_tech_multiplier or 10
     storage.warp_minutes_per_tech = math.floor(storage.warp_minutes_per_tech_multiplier *
                                                    math.sqrt(game.difficulty_settings.technology_price_multiplier))
-    storage.warp_minutes_total = math.max(5, storage.warp_minutes_per_tech)
+    storage.warp_minutes_total = math.min(10, math.max(5, storage.warp_minutes_per_tech))
 
     -- 刷新星系参数
 
@@ -662,9 +681,9 @@ local function run_reset(is_perfect)
 
     -- max_platform_size for mothership
     if storage.run_perfect == 0 then
-        storage.max_platform_size = 64
+        storage.max_platform_size = 200
     elseif storage.run_perfect <= 10 then
-        storage.max_platform_size = 100 * storage.run_perfect
+        storage.max_platform_size = 200 + 80 * storage.run_perfect
     elseif storage.run_perfect <= 100 then
         storage.max_platform_size = 2000 + 10 * storage.run_perfect
     else
@@ -696,20 +715,9 @@ local function run_reset(is_perfect)
         -- force.unlock_space_location(aquilo)
     end
 
-    try_add_trait({'', '\n',
-                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
-                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
-                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier}})
-
-    for _, tech_name in pairs(productivity_tech_names) do
-        local level = storage.productivity_tech_levels[tech_name]
-        force.technologies[tech_name].level = level
-        try_add_legacy({'wn.legacy-bonus', tech_name, level - 1})
-    end
-
-    if is_perfect then
-        research_recursive('space-science-pack')
-    end
+    -- if is_perfect then
+    --     research_recursive('space-science-pack')
+    -- end
 
     -- 更新UI信息
     players_gui()
@@ -928,13 +936,13 @@ script.on_event(defines.events.on_research_finished, function(event)
     if not event.by_script then
         -- 增加时间
         if research.prototype and not research.prototype.research_trigger then
-            local delta_minutes = storage.warp_minutes_per_tech * (research_name == 'health' and 10 or 1)
+            local delta_minutes = storage.warp_minutes_per_tech * (research_name == 'health' and 5 or 1)
             storage.warp_minutes_total = storage.warp_minutes_total + delta_minutes
             game.print({'wn.warp-time-tech', storage.warp_minutes_per_tech, get_warp_time_left()})
         end
 
         -- 自动添加无限科技
-        if research.level > 5 then
+        if research.level > research.prototype.level then
             local queue = game.forces.player.research_queue
             queue[table_size(queue) + 1] = research
             game.forces.player.research_queue = queue
