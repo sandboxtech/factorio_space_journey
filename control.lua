@@ -878,8 +878,12 @@ script.on_event(defines.events.on_rocket_launched, function(event)
     decrease = math.max(1, decrease)
     storage.warp_minutes_total = storage.warp_minutes_total - decrease
 
+    local time_left = get_warp_time_left()
+    if time_left < 0 then
+        run_reset(false)
+        return
+    end
     local silo = event.rocket_silo
-
     game.print({'wn.warp-time-rocket', decrease, get_warp_time_left(), math.floor(silo.position.x),
                 math.floor(silo.position.y), silo.surface.name})
 end)
@@ -937,7 +941,7 @@ script.on_event(defines.events.on_research_finished, function(event)
             local queue = game.forces.player.research_queue
             queue[table_size(queue) + 1] = research
             game.forces.player.research_queue = queue
-            game.print({'wn.start-tech', research.name})
+            game.print({'wn.start-tech', research.name, research.level + 1})
         end
 
         storage.statistics[research_name] =
@@ -1024,39 +1028,40 @@ commands.add_command('ti', {'wn.ti-help'}, function(command)
     end
 end)
 
--- 传送
-commands.add_command('teleport', {'wn.ti-help'}, function(command)
-    if not command.player_index then
-        return
-    end
+-- 这段代码偶尔会卡死，为什么呢？
+-- commands.add_command('teleport', {'wn.ti-help'}, function(command)
+--     if not command.player_index then
+--         return
+--     end
 
-    local player = game.get_player(command.player_index)
-    if not command.parameter then
-        return
-    end
+--     local player = game.get_player(command.player_index)
+--     if not command.parameter then
+--         return
+--     end
 
-    local surface = game.get_surface(command.parameter)
-    if not surface then
-        player.print({'wn.teleport-surface-not-found', command.parameter})
-        return
-    end
+--     local surface = game.get_surface(command.parameter)
+--     if not surface then
+--         player.print({'wn.teleport-surface-not-found', command.parameter})
+--         return
+--     end
 
-    for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_armor,
-                                   defines.inventory.character_trash}) do
-        local inventory = player.get_inventory(inventory_def)
-        if inventory and not inventory.is_empty then
-            player.print({'wn.teleport-inventory-not-empty'})
-            return
-        end
-    end
+--     -- 这段代码会卡死服务器，为什么呢？
+--     -- for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_armor,
+--     --                                defines.inventory.character_trash}) do
+--     --     local inventory = player.get_inventory(inventory_def)
+--     --     if inventory and not inventory.is_empty then
+--     --         player.print({'wn.teleport-inventory-not-empty'})
+--     --         return
+--     --     end
+--     -- end
 
-    if player.character then
-        local pos = surface.find_non_colliding_position('character', {0, 0}, 0, 1)
-        player.teleport(pos, surface)
-        player.clear_items_inside()
-        game.print({'wn.teleport-notice', player.name, surface.name})
-    end
-end)
+--     if player.character then
+--         local pos = surface.find_non_colliding_position('character', {0, 0}, 0, 1)
+--         player.teleport(pos, surface)
+--         player.clear_items_inside()
+--         game.print({'wn.teleport-notice', player.name, surface.name})
+--     end
+-- end)
 
 script.on_nth_tick(60 * 60, function()
     -- 通知 1分钟一次
