@@ -628,9 +628,9 @@ local function run_reset(is_perfect)
     game.map_settings.pollution.enabled = true
     game.map_settings.pollution.ageing = readable(random_exp(3))
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(3))
-    try_add_trait({{'wn.galaxy-trait-pollution-ageing', game.map_settings.pollution.ageing}})
-    try_add_trait({{'wn.galaxy-trait-enemy_attack_pollution_consumption_modifier',
-                    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier}})
+    try_add_trait({'wn.galaxy-trait-pollution-ageing', game.map_settings.pollution.ageing})
+    try_add_trait({'wn.galaxy-trait-enemy_attack_pollution_consumption_modifier',
+                   game.map_settings.pollution.enemy_attack_pollution_consumption_modifier})
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.spoil_time_modifier = readable(0.5 + random_exp(4))
