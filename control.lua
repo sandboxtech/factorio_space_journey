@@ -336,7 +336,7 @@ local function set_resource(name, mgs, richness_multiplier)
     local size = random_size()
     local richness = random_richness()
     local frequency = random_frequency()
-    local value = size * richness * math.sqrt(frequency)
+    local value = size * richness * frequency
 
     local value_string = nil
     if value < 0.04 then
@@ -936,9 +936,9 @@ script.on_event(defines.events.on_research_finished, function(event)
     if not event.by_script then
         -- 增加时间
         if research.prototype and not research.prototype.research_trigger then
-            local delta_minutes = storage.warp_minutes_per_tech * (research_name == 'health' and 5 or 1)
+            local delta_minutes = storage.warp_minutes_per_tech * (research_name == 'health' and 2 or 1)
             storage.warp_minutes_total = storage.warp_minutes_total + delta_minutes
-            game.print({'wn.warp-time-tech', storage.warp_minutes_per_tech, get_warp_time_left()})
+            game.print({'wn.warp-time-tech', delta_minutes, get_warp_time_left()})
         end
 
         -- 自动添加无限科技
@@ -962,6 +962,10 @@ end)
 
 -- 手动重置
 commands.add_command("run_auto", {"wn.run-reset-help"}, function(command)
+    if not command.player_index then
+        return
+    end
+
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         run_reset(false)
@@ -972,6 +976,10 @@ end)
 
 -- 手动重置
 commands.add_command("run_perfect", {"wn.run-reset-help"}, function(command)
+    if not command.player_index then
+        return
+    end
+
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         run_reset(true)
@@ -982,6 +990,10 @@ end)
 
 -- 自杀
 commands.add_command("suicide", {"wn.suicide-help"}, function(command)
+    if not command.player_index then
+        return
+    end
+
     local player = game.get_player(command.player_index)
     if player.character then
         player.character.die()
@@ -991,6 +1003,10 @@ end)
 
 -- 查询剩余时间
 commands.add_command("time_left", {"wn.suicide-help"}, function(command)
+    if not command.player_index then
+        return
+    end
+
     local player = game.get_player(command.player_index)
     if player.character then
         local time_left = get_warp_time_left()
@@ -1000,7 +1016,13 @@ end)
 
 -- 踢人
 commands.add_command("ti", {"wn.ti-help"}, function(command)
+    if not command.player_index then
+        return
+    end
     local player = game.get_player(command.player_index)
+    if not command.parameter then
+        return
+    end
     local player2 = game.get_player(command.parameter)
     if not player2 then
         player.print({"wn.ti-player-not-found", command.parameter})
@@ -1017,17 +1039,28 @@ end)
 
 -- 传送
 commands.add_command("teleport", {"wn.ti-help"}, function(command)
+    if not command.player_index then
+        return
+    end
+
     local player = game.get_player(command.player_index)
+    if not command.parameter then
+        return
+    end
+
     local surface = game.get_surface(command.parameter)
     if not surface then
         player.print({"wn.teleport-surface-not-found", command.parameter})
         return
     end
 
-    for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_guns,
-                                   defines.inventory.character_armor, defines.inventory.character_ammo,
-                                   defines.inventory.character_vehicle, defines.inventory.character_trash}) do
+    for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_armor,
+                                   defines.inventory.character_trash}) do
         local inventory = player.get_inventory(inventory_def)
+        if not inventory then
+            player.print({"wn.teleport-inventory-not-empty"})
+            return
+        end
         if not inventory.is_empty() then
             player.print({"wn.teleport-inventory-not-empty"})
             return
