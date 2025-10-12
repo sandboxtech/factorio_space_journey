@@ -15,18 +15,21 @@ local uncommon = 'uncommon'
 local rare = 'rare'
 local epic = 'epic'
 local legendary = 'legendary'
-local not_admin_text = {"wn.permission-denied"}
+local not_admin_text = {'wn.permission-denied'}
 
 local function make_location(name)
-    return {"wn.statistics-run-location", storage.statistics[name] or 0, name}
+    return {'wn.statistics-run-location', storage.statistics[name] or 0, name}
 end
 
 local function make_tech(name)
-    return {"wn.statistics-run-tech", storage.statistics[name] or 0, name,
+    return {'wn.statistics-run-tech', storage.statistics[name] or 0, name,
             game.forces.player.technologies[name].localised_name}
 end
 
 local function try_add_trait(trait)
+    if not trait then
+        return
+    end
     storage.traits = storage.traits or {''}
     if table_size(storage.traits) >= 18 then
         storage.traits = {'', storage.traits}
@@ -34,12 +37,15 @@ local function try_add_trait(trait)
     table.insert(storage.traits, trait)
 end
 
-local function try_add_legacy(trait)
+local function try_add_legacy(legacy)
+    if not legacy then
+        return
+    end
     storage.legacies = storage.legacies or {''}
     if table_size(storage.legacies) >= 18 then
         storage.legacies = {'', storage.legacies}
     end
-    table.insert(storage.legacies, trait)
+    table.insert(storage.legacies, legacy)
 end
 
 local infinite_tech_names = {'steel-plate-productivity', 'plastic-bar-productivity',
@@ -59,75 +65,75 @@ local function player_gui(player)
     end
     player.gui.top.clear()
     player.gui.top.add {
-        type = "sprite-button",
-        -- sprite = "space-location/solar-system-edge",
-        sprite = "virtual-signal/signal-heart",
-        -- sprite = "item/raw-fish",
-        name = "info",
-        tooltip = {"wn.introduction", storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket,
+        type = 'sprite-button',
+        -- sprite = 'space-location/solar-system-edge',
+        sprite = 'virtual-signal/signal-heart',
+        -- sprite = 'item/raw-fish',
+        name = 'info',
+        tooltip = {'wn.introduction', storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket,
                    storage.current_hostname}
     }
     player.gui.top.add {
-        type = "sprite-button",
-        sprite = "virtual-signal/signal-star",
-        name = "statistics",
-        tooltip = {"", {"wn.statistics-title"},
-                   {"wn.statistics-run", math.ceil(game.tick / day_to_tick), storage.run_auto, storage.run_perfect}}
+        type = 'sprite-button',
+        sprite = 'virtual-signal/signal-star',
+        name = 'statistics',
+        tooltip = {'', {'wn.statistics-title'},
+                   {'wn.statistics-run', math.ceil(game.tick / day_to_tick), storage.run_auto, storage.run_perfect}}
     }
 
     player.gui.top.add {
-        type = "sprite-button",
-        sprite = "virtual-signal/signal-science-pack",
-        name = "science",
-        tooltip = {"", {"wn.statistics-title-tech"},
-                   {"", make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
+        type = 'sprite-button',
+        sprite = 'virtual-signal/signal-science-pack',
+        name = 'science',
+        tooltip = {'', {'wn.statistics-title-tech'},
+                   {'', make_tech('automation-science-pack'), make_tech('logistic-science-pack'),
                     make_tech('chemical-science-pack'), make_tech('production-science-pack'),
                     make_tech('utility-science-pack'), make_tech('space-science-pack'),
                     make_tech('metallurgic-science-pack'), make_tech('agricultural-science-pack'),
                     make_tech('electromagnetic-science-pack'), make_tech('military-science-pack'),
-                    make_tech('cryogenic-science-pack'), make_tech('promethium-science-pack'), "\n"},
+                    make_tech('cryogenic-science-pack'), make_tech('promethium-science-pack'), '\n'},
 
-                   {"", make_tech('epic-quality'), make_tech('legendary-quality'), "\n"},
+                   {'', make_tech('epic-quality'), make_tech('legendary-quality'), '\n'},
 
-                   {"", make_tech('mining-productivity-3'), make_tech('plastic-bar-productivity'),
+                   {'', make_tech('mining-productivity-3'), make_tech('plastic-bar-productivity'),
                     make_tech('steel-plate-productivity'), make_tech('low-density-structure-productivity'),
                     make_tech('rocket-fuel-productivity', 'processing-unit-productivity'),
                     make_tech('rocket-part-productivity'), make_tech('asteroid-productivity'),
-                    make_tech('scrap-recycling-productivity'), "\n", make_tech('research-productivity'), "\n"},
+                    make_tech('scrap-recycling-productivity'), '\n', make_tech('research-productivity'), '\n'},
 
-                   {"", make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
+                   {'', make_tech('physical-projectile-damage-7'), make_tech('stronger-explosives-7'),
                     make_tech('refined-flammables-7'), make_tech('laser-weapons-damage-7'),
                     make_tech('electric-weapons-damage-4'), make_tech('artillery-shell-damage-1'),
-                    make_tech('railgun-damage-1'), "\n"}}
+                    make_tech('railgun-damage-1'), '\n'}}
     }
 
     if not storage.traits then
-        storage.traits = {""}
+        storage.traits = {''}
     end
     player.gui.top.add {
-        type = "sprite-button",
-        sprite = "virtual-signal/signal-info",
-        name = "traits",
+        type = 'sprite-button',
+        sprite = 'virtual-signal/signal-info',
+        name = 'traits',
         tooltip = storage.traits
     }
 
     if not storage.legacies then
-        storage.legacies = {""}
+        storage.legacies = {''}
     end
     player.gui.top.add {
-        type = "sprite-button",
-        sprite = "virtual-signal/signal-skull",
-        name = "legacies",
+        type = 'sprite-button',
+        sprite = 'virtual-signal/signal-skull',
+        name = 'legacies',
         tooltip = storage.legacies
     }
 
     player.gui.top.add {
-        type = "sprite-button",
+        type = 'sprite-button',
         sprite = 'entity/space-platform-hub',
-        name = "galaxy",
-        tooltip = {"", {"wn.galaxy-trait-platform-amount", storage.max_platform_count},
-                   {"wn.galaxy-trait-platform-size", storage.max_platform_size}, {"wn.galaxy-trait-title"},
-                   {"wn.galaxy-trait-more"}}
+        name = 'galaxy',
+        tooltip = {'', {'wn.galaxy-trait-platform-amount', storage.max_platform_count},
+                   {'wn.galaxy-trait-platform-size', storage.max_platform_size}, {'wn.galaxy-trait-title'},
+                   {'wn.galaxy-trait-more'}}
     }
 end
 
@@ -142,7 +148,7 @@ local function players_gui()
 end
 
 -- 手动重置players_gui
-commands.add_command("players_gui", {"wn.players-gui-help"}, function(command)
+commands.add_command('players_gui', {'wn.players-gui-help'}, function(command)
     local player = game.get_player(command.player_index)
     if not player or player.admin then
         players_gui()
@@ -518,7 +524,7 @@ local function run_reset(is_perfect)
 
     -- 清除星球前
     local last_run_ticks = (game.tick - storage.run_start_tick)
-    game.print({"wn.warp-success-time", math.floor(last_run_ticks / hour_to_tick),
+    game.print({'wn.warp-success-time', math.floor(last_run_ticks / hour_to_tick),
                 math.floor(last_run_ticks / min_to_tick) % 60})
     storage.run_start_tick = game.tick
 
@@ -530,14 +536,14 @@ local function run_reset(is_perfect)
         for _, player in pairs(game.players) do
             if player.connected then
                 if player.surface and player.surface.platform then
-                    game.print({"wn.player-success", player.name})
+                    game.print({'wn.player-success', player.name})
                     if not storage.player_success_count[player.name] then
                         storage.player_success_count[player.name] = 1
                     else
                         storage.player_success_count[player.name] = storage.player_success_count[player.name] + 1
                     end
                 else
-                    game.print({"wn.player-failure", player.name})
+                    game.print({'wn.player-failure', player.name})
                 end
             end
         end
@@ -557,29 +563,13 @@ local function run_reset(is_perfect)
             end
             player_reset(player)
         else
-            if player.get_inventory then
-                local inventory = player.get_inventory(defines.inventory.character_main)
-                if inventory and inventory.is_empty() then
-                    player.insert {
-                        name = "processing-unit",
-                        count = 100
-                    }
-                    player.insert {
-                        name = "low-density-structure",
-                        count = 100
-                    }
-                    player.insert {
-                        name = "rocket-fuel",
-                        count = 100
-                    }
-                end
-            end
+
         end
     end
 
     -- 删除星球前
-    storage.traits = {"", {'wn.traits-title'}}
-    storage.legacies = {"", {'wn.legacies-title'}}
+    storage.traits = {'', {'wn.traits-title'}}
+    storage.legacies = {'', {'wn.legacies-title'}}
     -- 清空标记
     for _, surface in pairs(game.surfaces) do
         for _, tag in pairs(game.forces.player.find_chart_tags(surface)) do
@@ -587,18 +577,18 @@ local function run_reset(is_perfect)
         end
     end
 
-    game.surfaces["nauvis"].clear(true)
-    if game.surfaces["vulcanus"] ~= nil then
-        game.surfaces["vulcanus"].clear(true)
+    game.surfaces['nauvis'].clear(true)
+    if game.surfaces['vulcanus'] ~= nil then
+        game.surfaces['vulcanus'].clear(true)
     end
-    if game.surfaces["gleba"] ~= nil then
-        game.surfaces["gleba"].clear(true)
+    if game.surfaces['gleba'] ~= nil then
+        game.surfaces['gleba'].clear(true)
     end
-    if game.surfaces["fulgora"] ~= nil then
-        game.surfaces["fulgora"].clear(true)
+    if game.surfaces['fulgora'] ~= nil then
+        game.surfaces['fulgora'].clear(true)
     end
-    if game.surfaces["aquilo"] ~= nil then
-        game.surfaces["aquilo"].clear(true)
+    if game.surfaces['aquilo'] ~= nil then
+        game.surfaces['aquilo'].clear(true)
     end
 
     local force = game.forces.player
@@ -638,8 +628,8 @@ local function run_reset(is_perfect)
     game.map_settings.pollution.enabled = true
     game.map_settings.pollution.ageing = readable(random_exp(3))
     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier = readable(random_exp(3))
-    try_add_trait({{"wn.galaxy-trait-pollution-ageing", game.map_settings.pollution.ageing}})
-    try_add_trait({{"wn.galaxy-trait-enemy_attack_pollution_consumption_modifier",
+    try_add_trait({{'wn.galaxy-trait-pollution-ageing', game.map_settings.pollution.ageing}})
+    try_add_trait({{'wn.galaxy-trait-enemy_attack_pollution_consumption_modifier',
                     game.map_settings.pollution.enemy_attack_pollution_consumption_modifier}})
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
@@ -660,11 +650,11 @@ local function run_reset(is_perfect)
     force.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
                                                        storage.laboratory_productivity_bonus_multiplier)
     try_add_trait({'', '\n',
-                   {"wn.galaxy-trait-technology_price_multiplier", game.difficulty_settings.technology_price_multiplier},
-                   {"wn.galaxy-trait-spawning_rate", game.map_settings.asteroids.spawning_rate},
-                   {"wn.galaxy-trait-spoil_time_modifier", game.difficulty_settings.spoil_time_modifier},
-                   {"wn.galaxy-trait-mining_drill_productivity_bonus", force.mining_drill_productivity_bonus},
-                   {"wn.galaxy-trait-laboratory_productivity_bonus", force.laboratory_productivity_bonus}})
+                   {'wn.galaxy-trait-technology_price_multiplier', game.difficulty_settings.technology_price_multiplier},
+                   {'wn.galaxy-trait-spawning_rate', game.map_settings.asteroids.spawning_rate},
+                   {'wn.galaxy-trait-spoil_time_modifier', game.difficulty_settings.spoil_time_modifier},
+                   {'wn.galaxy-trait-mining_drill_productivity_bonus', force.mining_drill_productivity_bonus},
+                   {'wn.galaxy-trait-laboratory_productivity_bonus', force.laboratory_productivity_bonus}})
 
     storage.warp_minutes_per_tech_multiplier = storage.warp_minutes_per_tech_multiplier or 10
     storage.warp_minutes_per_tech = math.floor(storage.warp_minutes_per_tech_multiplier *
@@ -693,7 +683,7 @@ local function run_reset(is_perfect)
     -- 初始赠送科技
     local function research_recursive(name)
         game.forces.player.technologies[name].research_recursive()
-        game.print({"wn.free-tech", name})
+        game.print({'wn.free-tech', name})
     end
 
     local force = game.forces.player
@@ -782,7 +772,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     if player.online_time > 0 then
         local last_delta = math.max(0, math.floor((game.tick - player.last_online) / hour_to_tick))
         local total_time = math.max(0, math.floor(player.online_time / hour_to_tick))
-        welcome = {"wn.welcome-player", player.name, total_time, last_delta}
+        welcome = {'wn.welcome-player', player.name, total_time, last_delta}
 
         -- 打印通关次数
         storage.player_failure_count = storage.player_failure_count or {}
@@ -791,32 +781,32 @@ script.on_event(defines.events.on_player_joined_game, function(event)
         if storage.player_success_count[player.name] or storage.player_failure_count[player.name] then
             local success = storage.player_success_count[player.name] or 0
             local failure = storage.player_failure_count[player.name] or 0
-            game.print({"wn.welcome-player-success", success})
+            game.print({'wn.welcome-player-success', success})
         end
     else
-        welcome = {"wn.welcome-new-player", player.name}
+        welcome = {'wn.welcome-new-player', player.name}
         player.insert {
-            name = "processing-unit",
+            name = 'processing-unit',
             count = 200
         }
         player.insert {
-            name = "low-density-structure",
+            name = 'low-density-structure',
             count = 200
         }
         player.insert {
-            name = "rocket-fuel",
+            name = 'rocket-fuel',
             count = 200
         }
         player.insert {
-            name = "space-platform-starter-pack",
+            name = 'space-platform-starter-pack',
             count = 1
         }
         player.insert {
-            name = "rocket-silo",
+            name = 'rocket-silo',
             count = 1
         }
         player.insert {
-            name = "cargo-landing-pad",
+            name = 'cargo-landing-pad',
             count = 1
         }
     end
@@ -949,19 +939,15 @@ script.on_event(defines.events.on_research_finished, function(event)
             game.print({'wn.start-tech', research.name})
         end
 
-        if not storage.statistics[research_name] then
-            storage.statistics[research_name] = 1
-        else
-            storage.statistics[research_name] = storage.statistics[research_name] + 1
-        end
-
+        storage.statistics[research_name] =
+            storage.statistics[research_name] and storage.statistics[research_name] + 1 or 1
     end
 
     players_gui()
 end)
 
 -- 手动重置
-commands.add_command("run_auto", {"wn.run-reset-help"}, function(command)
+commands.add_command('run_auto', {'wn.run-reset-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -975,7 +961,7 @@ commands.add_command("run_auto", {"wn.run-reset-help"}, function(command)
 end)
 
 -- 手动重置
-commands.add_command("run_perfect", {"wn.run-reset-help"}, function(command)
+commands.add_command('run_perfect', {'wn.run-reset-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -989,7 +975,7 @@ commands.add_command("run_perfect", {"wn.run-reset-help"}, function(command)
 end)
 
 -- 自杀
-commands.add_command("suicide", {"wn.suicide-help"}, function(command)
+commands.add_command('suicide', {'wn.suicide-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -1002,7 +988,7 @@ commands.add_command("suicide", {"wn.suicide-help"}, function(command)
 end)
 
 -- 查询剩余时间
-commands.add_command("time_left", {"wn.suicide-help"}, function(command)
+commands.add_command('time_left', {'wn.suicide-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -1015,7 +1001,7 @@ commands.add_command("time_left", {"wn.suicide-help"}, function(command)
 end)
 
 -- 踢人
-commands.add_command("ti", {"wn.ti-help"}, function(command)
+commands.add_command('ti', {'wn.ti-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -1025,20 +1011,20 @@ commands.add_command("ti", {"wn.ti-help"}, function(command)
     end
     local player2 = game.get_player(command.parameter)
     if not player2 then
-        player.print({"wn.ti-player-not-found", command.parameter})
+        player.print({'wn.ti-player-not-found', command.parameter})
         return
     end
 
     if player.online_time > player2.online_time * 10 then
-        player.print({"wn.ti-success", player.name, player2.name})
+        player.print({'wn.ti-success', player.name, player2.name})
         game.kick_player(player2)
     else
-        player.print({"wn.ti-failure", player.name, player2.name})
+        player.print({'wn.ti-failure', player.name, player2.name})
     end
 end)
 
 -- 传送
-commands.add_command("teleport", {"wn.ti-help"}, function(command)
+commands.add_command('teleport', {'wn.ti-help'}, function(command)
     if not command.player_index then
         return
     end
@@ -1050,19 +1036,15 @@ commands.add_command("teleport", {"wn.ti-help"}, function(command)
 
     local surface = game.get_surface(command.parameter)
     if not surface then
-        player.print({"wn.teleport-surface-not-found", command.parameter})
+        player.print({'wn.teleport-surface-not-found', command.parameter})
         return
     end
 
     for _, inventory_def in pairs({defines.inventory.character_main, defines.inventory.character_armor,
                                    defines.inventory.character_trash}) do
         local inventory = player.get_inventory(inventory_def)
-        if not inventory then
-            player.print({"wn.teleport-inventory-not-empty"})
-            return
-        end
-        if not inventory.is_empty() then
-            player.print({"wn.teleport-inventory-not-empty"})
+        if inventory and not inventory.is_empty then
+            player.print({'wn.teleport-inventory-not-empty'})
             return
         end
     end
@@ -1112,7 +1094,7 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         local force = platform.force
         if table_size(force.platforms) > storage.max_platform_count then
             platform.destroy(1)
-            game.print({"wn.too-many-platforms", storage.max_platform_count})
+            game.print({'wn.too-many-platforms', storage.max_platform_count})
         end
     end
 
