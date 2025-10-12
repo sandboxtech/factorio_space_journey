@@ -419,6 +419,7 @@ script.on_event(defines.events.on_surface_cleared, function(event)
     local r = storage.radius * random_exp(2)
     r = math.max(storage.radius_min, r)
     r = math.min(storage.radius_max, r)
+    r = math.ceil(r)
     storage.radius_of[surface.name] = r
     try_add_trait({'wn.traits-radius', r})
 
