@@ -551,8 +551,8 @@ local function run_reset(is_perfect)
 
     -- 重置玩家
     for _, player in pairs(game.players) do
-        -- if player.surface and not player.surface.platform and player.character and player.character.die then
-        if player.surface and player.surface.planet then
+        if player.surface and not player.surface.platform then
+            -- if player.surface and player.surface.planet then
             local inventory = player.get_inventory(defines.inventory.character_main)
             if inventory then
                 inventory.clear()
