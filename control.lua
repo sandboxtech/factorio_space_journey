@@ -604,20 +604,23 @@ local function run_reset(is_perfect)
     force.reset()
 
     -- 奖励产能加成
-    storage.mining_drill_productivity_bonus_multiplier = storage.mining_drill_productivity_bonus_multiplier or 1
-    storage.laboratory_productivity_bonus_multiplier = storage.laboratory_productivity_bonus_multiplier or 1
-
-    force.mining_drill_productivity_bonus = readable((random_exp(2) - 1) *
-                                                         storage.mining_drill_productivity_bonus_multiplier)
-    force.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
-                                                       storage.laboratory_productivity_bonus_multiplier)
-
     for _, tech_name in pairs(infinite_tech_names) do
         local level = storage.infinite_tech_levels[tech_name]
         local tech = force.technologies[tech_name]
         tech.level = level
         try_add_legacy({'wn.legacy-bonus', tech_name, level - tech.prototype.level, tech.localised_name})
     end
+    storage.mining_drill_productivity_bonus_multiplier = storage.mining_drill_productivity_bonus_multiplier or 1
+    storage.laboratory_productivity_bonus_multiplier = storage.laboratory_productivity_bonus_multiplier or 1
+
+    storage.mining_drill_productivity_bonus = readable((random_exp(2) - 1) *
+                                                           storage.mining_drill_productivity_bonus_multiplier)
+    storage.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
+                                                         storage.laboratory_productivity_bonus_multiplier)
+
+    force.mining_drill_productivity_bonus = force.mining_drill_productivity_bonus +
+                                                storage.mining_drill_productivity_bonus
+    force.laboratory_productivity_bonus = force.laboratory_productivity_bonus + storage.laboratory_productivity_bonu
 
     force.friendly_fire = true
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
@@ -656,8 +659,8 @@ local function run_reset(is_perfect)
                    {'wn.galaxy-trait-technology_price_multiplier', game.difficulty_settings.technology_price_multiplier},
                    {'wn.galaxy-trait-spawning_rate', game.map_settings.asteroids.spawning_rate},
                    {'wn.galaxy-trait-spoil_time_modifier', game.difficulty_settings.spoil_time_modifier},
-                   {'wn.galaxy-trait-mining_drill_productivity_bonus', force.mining_drill_productivity_bonus},
-                   {'wn.galaxy-trait-laboratory_productivity_bonus', force.laboratory_productivity_bonus}})
+                   {'wn.galaxy-trait-mining_drill_productivity_bonus', storage.mining_drill_productivity_bonus},
+                   {'wn.galaxy-trait-laboratory_productivity_bonus', storage.laboratory_productivity_bonus}})
 
     storage.warp_minutes_per_tech_multiplier = storage.warp_minutes_per_tech_multiplier or 10
     storage.warp_minutes_per_tech = math.floor(storage.warp_minutes_per_tech_multiplier *
