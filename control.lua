@@ -60,15 +60,12 @@ local infinite_tech_names = {'steel-plate-productivity', 'plastic-bar-productivi
 local function player_gui(player)
 
     if not storage.current_hostname then
-        storage.current_hostname =
-            '\nQ群541826511\n查看倒计时，输入 /time_left\n自杀，输入 /suicide\n踢玩家，输入 /ti <玩家名>\n死亡传送 输入/teleport nauvis/vulcanus/gleba/nauvis/aquilo\n'
+        storage.current_hostname = '\nQ群541826511 Q群293280221\n踢玩家，输入 /ti <玩家名>\n'
     end
     player.gui.top.clear()
     player.gui.top.add {
         type = 'sprite-button',
-        -- sprite = 'space-location/solar-system-edge',
-        sprite = 'virtual-signal/signal-heart',
-        -- sprite = 'item/raw-fish',
+        sprite = 'virtual-signal/signal-hourglass',
         name = 'info',
         tooltip = {'wn.introduction', storage.warp_minutes_per_tech, storage.warp_minutes_per_rocket,
                    storage.current_hostname}
@@ -112,7 +109,8 @@ local function player_gui(player)
     end
     player.gui.top.add {
         type = 'sprite-button',
-        sprite = 'virtual-signal/signal-info',
+        sprite = 'space-location/solar-system-edge',
+        -- sprite = 'virtual-signal/signal-info',
         name = 'traits',
         tooltip = storage.traits
     }
@@ -129,7 +127,8 @@ local function player_gui(player)
 
     player.gui.top.add {
         type = 'sprite-button',
-        sprite = 'entity/space-platform-hub',
+        sprite = 'item/space-platform-foundation',
+        -- sprite = 'entity/space-platform-hub',
         name = 'galaxy',
         tooltip = {'', {'wn.galaxy-trait-platform-amount', storage.max_platform_count},
                    {'wn.galaxy-trait-platform-size', storage.max_platform_size}, {'wn.galaxy-trait-title'},
@@ -285,7 +284,7 @@ local function random_size()
 end
 
 local function random_richness()
-    return readable(0.1 + random_exp(8) * storage.richness)
+    return readable(0.1 + random_exp(6) * storage.richness)
 end
 
 local function random_nature()
@@ -342,16 +341,16 @@ local function set_resource(name, mgs, richness_multiplier)
     local size = random_size()
     local richness = random_richness()
     local frequency = random_frequency()
-    local value = size * richness * frequency
+    local value = size * richness * frequency / storage.size / storage.richness / storage.frequency
 
     local value_string = nil
-    if value < 0.04 then
+    if value < 0.01 then
         value_string = {'wn.very-low'}
-    elseif value < 0.25 then
+    elseif value < 0.1 then
         value_string = {'wn.low'}
-    elseif value > 25 then
+    elseif value > 100 then
         value_string = {'wn.very-high'}
-    elseif value > 4 then
+    elseif value > 10 then
         value_string = {'wn.high'}
     else
         value_string = {'wn.medium'}
@@ -603,6 +602,16 @@ local function run_reset(is_perfect)
     end
     -- 重置玩家势力
     force.reset()
+
+    -- 奖励产能加成
+    storage.mining_drill_productivity_bonus_multiplier = storage.mining_drill_productivity_bonus_multiplier or 1
+    storage.laboratory_productivity_bonus_multiplier = storage.laboratory_productivity_bonus_multiplier or 1
+
+    force.mining_drill_productivity_bonus = readable((random_exp(2) - 1) *
+                                                         storage.mining_drill_productivity_bonus_multiplier)
+    force.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
+                                                       storage.laboratory_productivity_bonus_multiplier)
+
     for _, tech_name in pairs(infinite_tech_names) do
         local level = storage.infinite_tech_levels[tech_name]
         local tech = force.technologies[tech_name]
@@ -643,13 +652,6 @@ local function run_reset(is_perfect)
     tech_multiplier = math.min(tech_multiplier, 4 + storage.run_perfect * 1)
     game.difficulty_settings.technology_price_multiplier = tech_multiplier
 
-    storage.mining_drill_productivity_bonus_multiplier = storage.mining_drill_productivity_bonus_multiplier or 1
-    storage.laboratory_productivity_bonus_multiplier = storage.laboratory_productivity_bonus_multiplier or 1
-
-    force.mining_drill_productivity_bonus = readable((random_exp(2) - 1) *
-                                                         storage.mining_drill_productivity_bonus_multiplier)
-    force.laboratory_productivity_bonus = readable((random_exp(2) - 1) *
-                                                       storage.laboratory_productivity_bonus_multiplier)
     try_add_trait({'', '\n',
                    {'wn.galaxy-trait-technology_price_multiplier', game.difficulty_settings.technology_price_multiplier},
                    {'wn.galaxy-trait-spawning_rate', game.map_settings.asteroids.spawning_rate},
@@ -735,8 +737,8 @@ script.on_init(function()
     storage.last_warp_tick = 0
     storage.last_warp_count = 0
 
-    storage.richness = 1
-    storage.frequency = 1
+    storage.richness = 0.25
+    storage.frequency = 0.5
     storage.size = 1
     storage.local_specialty_multiplier = 0.25
 
@@ -979,32 +981,6 @@ commands.add_command('run_perfect', {'wn.run-reset-help'}, function(command)
     end
 end)
 
--- 自杀
-commands.add_command('suicide', {'wn.suicide-help'}, function(command)
-    if not command.player_index then
-        return
-    end
-
-    local player = game.get_player(command.player_index)
-    if player.character then
-        player.character.die()
-        game.print({'wn.suicide-notice', player.name})
-    end
-end)
-
--- 查询剩余时间
-commands.add_command('time_left', {'wn.suicide-help'}, function(command)
-    if not command.player_index then
-        return
-    end
-
-    local player = game.get_player(command.player_index)
-    if player.character then
-        local time_left = get_warp_time_left()
-        player.print({'wn.warp-time-left', time_left})
-    end
-end)
-
 -- 踢人
 commands.add_command('ti', {'wn.ti-help'}, function(command)
     if not command.player_index then
@@ -1128,3 +1104,23 @@ script.on_event(defines.events.on_space_platform_changed_state, function(event)
         end
     end
 end)
+
+script.on_event(defines.events.on_gui_click, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then
+        return
+    end
+    if event.element.name == 'legacies' then
+        -- suicide
+        if player.character then
+            player.character.die()
+            game.print({'wn.suicide-notice', player.name})
+        end
+        return
+    else
+        -- time_left
+        player.print({'wn.warp-time-left', get_warp_time_left()})
+        return
+    end
+end)
+
