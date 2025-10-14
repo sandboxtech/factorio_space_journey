@@ -249,8 +249,8 @@ end
 
 -- 重置母星
 local function nauvis_reset()
-    create_entity('rocket-silo', 5, 5)
-    create_entity('cargo-landing-pad', 5, -7)
+    -- create_entity('rocket-silo', 5, 5)
+    -- create_entity('cargo-landing-pad', 5, -7)
 end
 
 -- 数字格式
@@ -294,9 +294,16 @@ local function random_nature()
     return readable(math.pow(2, (math.random() - math.random()) * storage.nature))
 end
 
+local function is_mothership(platform)
+    if not platform or not platform.surface then
+        return false
+    end
+    return platform.surface.map_gen_settings.width >= 100
+end
+
 local function get_mothership()
     for _, platform in pairs(game.forces.player.platforms) do
-        if platform.surface.map_gen_settings.width >= 100 then
+        if is_mothership(platform) then
             return platform
         end
     end
@@ -629,6 +636,17 @@ local function run_reset(is_perfect)
     for _, platform in pairs(force.platforms) do
         platform.space_location = 'nauvis'
         platform.paused = true
+        local hub_health = 1000
+        if platform.hub and not is_mothership(platform) then
+            local kg = platform.weight
+            local rate = kg / (10000000) -- 10000t,rate 1
+            local damage = rate * math.random() * math.random() * hub_health -- 1000=hub.health
+            damage = math.ceil(damage)
+            if damage * 10 > hub_health then
+                platform.damage(math.min(hub_health - 1, damage), force)
+                game.print({'wn.warp-damage', platform.name, damage})
+            end
+        end
     end
 
     -- 重置科技
@@ -697,17 +715,17 @@ local function run_reset(is_perfect)
     if storage.run >= 1 then
         -- force.technologies['oil-processing'].researched = true
         -- force.technologies['uranium-processing'].researched = true
-        force.technologies['space-platform'].researched = true
+        -- force.technologies['space-platform'].researched = true
         -- force.technologies['space-science-pack'].researched = true
         -- force.technologies['space-platform-thruster'].researched = true
         -- force.technologies['planet-discovery-vulcanus'].researched = true
         -- force.technologies['planet-discovery-gleba'].researched = true
         -- force.technologies['planet-discovery-fulgora'].researched = true
         -- force.technologies['planet-discovery-aquilo'].researched = true
-        force.unlock_space_location(nauvis)
-        force.unlock_space_location(vulcanus)
-        force.unlock_space_location(gleba)
-        force.unlock_space_location(fulgora)
+        -- force.unlock_space_location(nauvis)
+        -- force.unlock_space_location(vulcanus)
+        -- force.unlock_space_location(gleba)
+        -- force.unlock_space_location(fulgora)
         -- force.unlock_space_location(aquilo)
     end
 
@@ -791,30 +809,6 @@ script.on_event(defines.events.on_player_joined_game, function(event)
         end
     else
         welcome = {'wn.welcome-new-player', player.name}
-        player.insert {
-            name = 'processing-unit',
-            count = 200
-        }
-        player.insert {
-            name = 'low-density-structure',
-            count = 200
-        }
-        player.insert {
-            name = 'rocket-fuel',
-            count = 200
-        }
-        player.insert {
-            name = 'space-platform-starter-pack',
-            count = 1
-        }
-        player.insert {
-            name = 'rocket-silo',
-            count = 1
-        }
-        player.insert {
-            name = 'cargo-landing-pad',
-            count = 1
-        }
     end
     game.print(welcome)
 end)
