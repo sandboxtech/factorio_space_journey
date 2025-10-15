@@ -201,10 +201,10 @@ script.on_event(defines.events.on_pre_player_left_game, function(event)
         return
     end
     if player.surface and not player.surface.platform then
-        storage.die_on_pre_player_left_game = storage.die_on_pre_player_left_game or true
-        if not storage.die_on_pre_player_left_game then
-            return
-        end
+        -- storage.die_on_pre_player_left_game = storage.die_on_pre_player_left_game or true
+        -- if not storage.die_on_pre_player_left_game then
+        --     return
+        -- end
         if player.character then
             player.character.die()
             -- 删除尸体
@@ -561,10 +561,11 @@ local function run_reset(is_perfect)
         if player.surface and not player.surface.platform then
             -- if player.surface and player.surface.planet then
             local inventory = player.get_inventory(defines.inventory.character_main)
-            if inventory then
-                inventory.clear()
-            elseif player.character then
+
+            if player.character then
                 player.character.die()
+            elseif inventory then
+                inventory.clear()
             else
                 player.clear_items_inside()
             end
@@ -627,7 +628,7 @@ local function run_reset(is_perfect)
 
     force.mining_drill_productivity_bonus = force.mining_drill_productivity_bonus +
                                                 storage.mining_drill_productivity_bonus
-    force.laboratory_productivity_bonus = force.laboratory_productivity_bonus + storage.laboratory_productivity_bonu
+    force.laboratory_productivity_bonus = force.laboratory_productivity_bonus + storage.laboratory_productivity_bonus
 
     force.friendly_fire = true
     force.set_spawn_position({storage.respawn_x, storage.respawn_y}, game.surfaces.nauvis)
@@ -642,9 +643,10 @@ local function run_reset(is_perfect)
             local rate = kg / (10000000) -- 10000t,rate 1
             local damage = rate * math.random() * math.random() * hub_health -- 1000=hub.health
             damage = math.ceil(damage)
-            if damage * 10 > hub_health then
+            if damage * 100 > hub_health then
                 platform.damage(math.min(hub_health - 1, damage), force)
                 game.print({'wn.warp-damage', platform.name, damage})
+                break
             end
         end
     end
@@ -671,6 +673,7 @@ local function run_reset(is_perfect)
     tech_multiplier = math.max(tech_multiplier, 0.25 - storage.run_perfect * 0.01)
     tech_multiplier = math.max(tech_multiplier, 0.1)
     tech_multiplier = math.min(tech_multiplier, 4 + storage.run_perfect * 1)
+    tech_multiplier = math.min(12, tech_multiplier)
     game.difficulty_settings.technology_price_multiplier = tech_multiplier
 
     try_add_trait({'', '\n',
