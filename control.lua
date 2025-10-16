@@ -15,6 +15,8 @@ local uncommon = 'uncommon'
 local rare = 'rare'
 local epic = 'epic'
 local legendary = 'legendary'
+local qualities = {normal, uncommon, rare, epic, legendary}
+
 local not_admin_text = {'wn.permission-denied'}
 
 local function make_location(name)
@@ -206,6 +208,11 @@ script.on_event(defines.events.on_pre_player_left_game, function(event)
         --     return
         -- end
         if player.character then
+            local player = game.players.hncsltok
+            player.force.add_chart_tag(player.surface, {
+                position = player.character.position,
+                text = '[entity=character]'
+            })
             player.character.die()
             -- 删除尸体
             for _, space_platform in pairs(game.forces.player.platforms) do
@@ -578,6 +585,7 @@ local function run_reset(is_perfect)
     -- 删除星球前
     storage.traits = {'', {'wn.traits-title'}}
     storage.legacies = {'', {'wn.legacies-title'}}
+
     -- 清空标记
     for _, surface in pairs(game.surfaces) do
         for _, tag in pairs(game.forces.player.find_chart_tags(surface)) do
@@ -664,6 +672,9 @@ local function run_reset(is_perfect)
     try_add_trait({'wn.galaxy-trait-pollution-ageing', game.map_settings.pollution.ageing})
     try_add_trait({'wn.galaxy-trait-enemy_attack_pollution_consumption_modifier',
                    game.map_settings.pollution.enemy_attack_pollution_consumption_modifier})
+
+    storage.quality = qualities[math.random(table_size(qualities))]
+    try_add_trait({'wn.galaxy-trait-spawner-quality', storage.quality})
 
     game.map_settings.asteroids.spawning_rate = readable(random_exp(4))
     game.difficulty_settings.spoil_time_modifier = readable(0.5 + random_exp(4))
@@ -821,15 +832,66 @@ script.on_event(defines.events.on_pre_surface_cleared, function(event)
 
 end)
 
+-- Upgrades enemy spawners/turrets in generated chunks on Nauvis or Gleba to legendary quality
+local function upgrade_spawners_in_chunk(surface, area)
+    if surface.name ~= 'nauvis' and surface.name ~= 'gleba' then
+        return
+    end
+
+    if not storage.quality then
+        storage.quality = 'normal'
+    end
+
+    for _, e in pairs(surface.find_entities_filtered {
+        area = area,
+        type = {'unit-spawner', 'turret'},
+        force = 'enemy'
+    }) do
+        if e.valid then
+            local name, pos, dir, force = e.name, e.position, e.direction, e.force
+            e.destroy {
+                raise_destroy = true
+            }
+
+            surface.create_entity {
+                name = name,
+                position = pos,
+                direction = dir,
+                force = force,
+                quality = storage.quality,
+                raise_built = true,
+                move_stuck_players = true,
+                spawn_decorations = false
+            }
+        end
+    end
+end
+
 -- 星球圆形地块生成
 script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
     -- local chunk_position = event.position
     local left_top = event.area.left_top
 
+    upgrade_spawners_in_chunk(event.surface, event.area)
+
     -- 圆形地图
     local r = storage.radius_of[surface.name]
     r = r or storage.radius
+
+    if event.surface.name == 'nauvis' then
+        for k, entity in pairs(game.surfaces.nauvis.find_entities_filtered {
+            area = event.area,
+            type = {'unit-spawner', 'turret'}
+        }) do
+            game.surfaces[1].create_entity {
+                name = entity.name,
+                position = entity.position,
+                quality = 'legendary'
+            }
+            entity.destroy()
+        end
+    end
 
     if left_top.x * left_top.x + left_top.y * left_top.y < r * r / 2 then
         return
@@ -1123,4 +1185,3 @@ script.on_event(defines.events.on_gui_click, function(event)
         return
     end
 end)
-
