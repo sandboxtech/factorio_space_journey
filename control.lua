@@ -644,7 +644,7 @@ local function run_reset(is_perfect)
             local damage = rate * math.random() * math.random() * hub_health -- 1000=hub.health
             damage = math.ceil(damage)
             if damage * 100 > hub_health then
-                platform.damage(math.min(hub_health - 1, damage), force)
+                platform.hub.damage(math.min(hub_health - 1, damage), force)
                 game.print({'wn.warp-damage', platform.name, damage})
                 break
             end
