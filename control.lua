@@ -62,7 +62,8 @@ local infinite_tech_names = {'steel-plate-productivity', 'plastic-bar-productivi
 local function player_gui(player)
 
     if not storage.current_hostname then
-        storage.current_hostname = '\nQ群541826511 Q群293280221\n踢玩家，输入 /ti <玩家名>\n'
+        storage.current_hostname =
+            '版本号20251017\nQ群541826511 Q群293280221\n踢玩家，输入 /ti <玩家名>\n'
     end
     player.gui.top.clear()
     player.gui.top.add {
@@ -208,7 +209,6 @@ script.on_event(defines.events.on_pre_player_left_game, function(event)
         --     return
         -- end
         if player.character then
-            local player = game.players.hncsltok
             player.force.add_chart_tag(player.surface, {
                 position = player.character.position,
                 text = '[entity=character]'
@@ -329,7 +329,7 @@ script.on_event(defines.events.on_surface_created, function(event)
 
     storage.max_othership_size = storage.max_othership_size or 64
     local mothership = get_mothership()
-    local size = mothership and storage.max_platform_size or storage.max_othership_size
+    local size = mothership and storage.max_othership_size or storage.max_platform_size
 
     local platform = surface.platform
     if platform then
